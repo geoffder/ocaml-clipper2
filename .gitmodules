@@ -1,0 +1,3 @@
+[submodule "c/vendor/Clipper2c"]
+	path = c/vendor/Clipper2c
+	url = https://github.com/geoffder/Clipper2c

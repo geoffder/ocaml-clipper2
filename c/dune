@@ -1,0 +1,68 @@
+(library
+ (name clipper_c)
+ (public_name clipper.c)
+ (wrapped false)
+ (libraries ctypes ctypes.foreign)
+ (flags
+  (:standard -w -9-16-27))
+ (ctypes
+  (build_flags_resolver
+   (vendored
+    ; HACK: multiple -I directives to work around cc commands being
+    ; run from different relative directories.
+    ; https://github.com/ocaml/dune/issues/5325
+    (c_flags "-Ic/vendor/Clipper2c/include" "-Ivendor/Clipper2c/include")
+    (c_library_flags -lstdc++)))
+  (headers
+   (include "clipper2c.h"))
+  (external_library_name libclipper2c)
+  (type_description
+   (instance Types)
+   (functor Clipper_c_type_descriptions))
+  (function_description
+   (concurrency sequential)
+   (instance Funcs)
+   (functor Clipper_c_function_descriptions))
+  (generated_types Clipper_c_types)
+  (generated_entry_point C))
+ (foreign_archives clipper2c))
+
+; Build Clipper2c vendor
+
+(rule
+ (targets dllclipper2c%{ext_dll} dllClipper2%{ext_dll})
+ (deps
+  (source_tree vendor/Clipper2c))
+ (action
+  (no-infer
+   (progn
+    (ignore-outputs
+     (chdir
+      vendor/Clipper2c/build_so
+      (progn
+       (run cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=ON ..)
+       (run make))))
+    (copy
+     vendor/Clipper2c/build_so/libclipper2c%{ext_dll}
+     dllclipper2c%{ext_dll})
+    (copy
+     vendor/Clipper2c/build_so/vendor/Clipper2/CPP/libClipper2%{ext_dll}
+     dllClipper2%{ext_dll})))))
+
+(rule
+ (targets libclipper2c.a libClipper2.a)
+ (deps
+  (source_tree vendor/Clipper2c))
+ (action
+  (no-infer
+   (progn
+    (ignore-outputs
+     (chdir
+      vendor/Clipper2c/build_a
+      (progn
+       (run cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF ..)
+       (run make))))
+    (copy vendor/Clipper2c/build_a/libclipper2c.a libclipper2c.a)
+    (copy
+     vendor/Clipper2c/build_a/vendor/Clipper2/CPP/libClipper2.a
+     libClipper2.a)))))
