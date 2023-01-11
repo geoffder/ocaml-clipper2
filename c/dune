@@ -25,7 +25,7 @@
    (functor Clipper_c_function_descriptions))
   (generated_types Clipper_c_types)
   (generated_entry_point C))
- (foreign_archives clipper2c))
+ (foreign_archives clipper2c Clipper2))
 
 ; Build Clipper2c vendor
 

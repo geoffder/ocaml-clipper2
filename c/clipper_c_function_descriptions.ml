@@ -205,12 +205,12 @@ module Functions (F : Ctypes.FOREIGN) = struct
   let path64_ellipse =
     foreign
       "clipper_path64_ellipse"
-      (ptr void @-> Point64.t @-> double @-> double @-> int @-> returning void)
+      (ptr void @-> Point64.t @-> double @-> double @-> int @-> returning (ptr Path64.t))
 
   let pathd_ellipse =
     foreign
       "clipper_pathd_ellipse"
-      (ptr void @-> PointD.t @-> double @-> double @-> int @-> returning void)
+      (ptr void @-> PointD.t @-> double @-> double @-> int @-> returning (ptr PathD.t))
 
   let paths64 = foreign "clipper_paths64" (ptr void @-> returning (ptr Paths64.t))
   let pathsd = foreign "clipper_pathsd" (ptr void @-> returning (ptr PathsD.t))
@@ -304,12 +304,12 @@ module Functions (F : Ctypes.FOREIGN) = struct
   let path64_trim_collinear =
     foreign
       "clipper_path64_trim_collinear"
-      (ptr void @-> ptr Path64.t @-> int @-> returning (ptr Path64.t))
+      (ptr void @-> ptr Path64.t @-> bool @-> returning (ptr Path64.t))
 
   let pathd_trim_collinear =
     foreign
       "clipper_pathd_trim_collinear"
-      (ptr void @-> ptr PathD.t @-> int @-> int @-> returning (ptr PathD.t))
+      (ptr void @-> ptr PathD.t @-> bool @-> int @-> returning (ptr PathD.t))
 
   let path64_ramer_douglas_peucker =
     foreign
@@ -679,12 +679,12 @@ module Functions (F : Ctypes.FOREIGN) = struct
 
   (* memory size *)
 
-  let path64_size = foreign "clipper_path64_size" (ptr Path64.t @-> returning size_t)
-  let pathd_size = foreign "clipper_pathd_size" (ptr PathD.t @-> returning size_t)
-  let paths64_size = foreign "clipper_paths64_size" (ptr Paths64.t @-> returning size_t)
-  let pathsd_size = foreign "clipper_pathsd_size" (ptr PathsD.t @-> returning size_t)
-  let rect64_size = foreign "clipper_rect64_size" (ptr Rect64.t @-> returning size_t)
-  let rectd_size = foreign "clipper_rectd_size" (ptr RectD.t @-> returning size_t)
+  let path64_size = foreign "clipper_path64_size" (void @-> returning size_t)
+  let pathd_size = foreign "clipper_pathd_size" (void @-> returning size_t)
+  let paths64_size = foreign "clipper_paths64_size" (void @-> returning size_t)
+  let pathsd_size = foreign "clipper_pathsd_size" (void @-> returning size_t)
+  let rect64_size = foreign "clipper_rect64_size" (void @-> returning size_t)
+  let rectd_size = foreign "clipper_rectd_size" (void @-> returning size_t)
 
   let polytree64_size =
     foreign "clipper_polytree64_size" (ptr PolyTree64.t @-> returning size_t)
