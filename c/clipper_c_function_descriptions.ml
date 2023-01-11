@@ -3,639 +3,742 @@ module Functions (F : Ctypes.FOREIGN) = struct
   open F
   open Clipper_c_types
 
-  (* Polygons *)
+  (* Boolean Operations *)
 
-  let simple_polygon =
+  let paths64_boolean_op =
     foreign
-      "manifold_simple_polygon"
-      (ptr void @-> ptr Vec2.t @-> size_t @-> returning (ptr SimplePolygon.t))
-
-  let polygons =
-    foreign
-      "manifold_polygons"
-      (ptr void @-> ptr (ptr SimplePolygon.t) @-> size_t @-> returning (ptr Polygons.t))
-
-  (* Mesh Construction *)
-
-  let mesh =
-    foreign
-      "manifold_mesh"
+      "clipper_paths64_boolean_op"
       ( ptr void
-        @-> ptr Vec3.t
-        @-> size_t
-        @-> ptr IVec3.t
-        @-> size_t
-        @-> returning (ptr Mesh.t) )
+      @-> ClipType.t
+      @-> FillRule.t
+      @-> ptr Paths64.t
+      @-> ptr Paths64.t
+      @-> returning (ptr Paths64.t) )
 
-  let mesh_w_normals =
+  let paths64_intersect =
     foreign
-      "manifold_mesh_w_normals"
+      "clipper_paths64_intersect"
       ( ptr void
-        @-> ptr Vec3.t
-        @-> size_t
-        @-> ptr IVec3.t
-        @-> size_t
-        @-> ptr Vec3.t
-        @-> returning (ptr Mesh.t) )
+      @-> ptr Paths64.t
+      @-> ptr Paths64.t
+      @-> FillRule.t
+      @-> returning (ptr Paths64.t) )
 
-  let mesh_w_tangents =
+  let paths64_union =
     foreign
-      "manifold_mesh_w_tangents"
+      "clipper_paths64_union"
       ( ptr void
-        @-> ptr Vec3.t
-        @-> size_t
-        @-> ptr IVec3.t
-        @-> size_t
-        @-> ptr Vec4.t
-        @-> returning (ptr Mesh.t) )
+      @-> ptr Paths64.t
+      @-> ptr Paths64.t
+      @-> FillRule.t
+      @-> returning (ptr Paths64.t) )
 
-  let mesh_w_normals_tangents =
+  let paths64_difference =
     foreign
-      "manifold_mesh_w_normals_tangents"
+      "clipper_paths64_difference"
       ( ptr void
-        @-> ptr Vec3.t
-        @-> size_t
-        @-> ptr IVec3.t
-        @-> size_t
-        @-> ptr Vec3.t
-        @-> ptr Vec4.t
-        @-> returning (ptr Mesh.t) )
+      @-> ptr Paths64.t
+      @-> ptr Paths64.t
+      @-> FillRule.t
+      @-> returning (ptr Paths64.t) )
 
-  let manifold_get_mesh =
-    foreign "manifold_get_mesh" (ptr void @-> ptr Manifold.t @-> returning (ptr Mesh.t))
-
-  let mesh_copy =
-    foreign "manifold_mesh_copy" (ptr void @-> ptr Mesh.t @-> returning (ptr Mesh.t))
-
-  let manifold_get_meshgl =
+  let paths64_xor =
     foreign
-      "manifold_get_meshgl"
-      (ptr void @-> ptr Manifold.t @-> returning (ptr MeshGL.t))
-
-  let meshgl_copy =
-    foreign "manifold_meshgl_copy" (ptr void @-> ptr MeshGL.t @-> returning (ptr MeshGL.t))
-
-  (* Mesh Info  *)
-
-  let manifold_get_mesh_relation =
-    foreign
-      "manifold_get_mesh_relation"
-      (ptr void @-> ptr Manifold.t @-> returning (ptr MeshRelation.t))
-
-  let mesh_relation_barycentric_length =
-    foreign
-      "manifold_mesh_relation_barycentric_length"
-      (ptr MeshRelation.t @-> returning size_t)
-
-  let mesh_relation_barycentric =
-    foreign
-      "manifold_mesh_relation_barycentric"
-      (ptr void @-> ptr MeshRelation.t @-> returning (ptr Vec3.t))
-
-  let mesh_relation_tri_bary_length =
-    foreign
-      "manifold_mesh_relation_tri_bary_length"
-      (ptr MeshRelation.t @-> returning size_t)
-
-  let mesh_relation_tri_bary =
-    foreign
-      "manifold_mesh_relation_tri_bary"
-      (ptr void @-> ptr MeshRelation.t @-> returning (ptr BaryRef.t))
-
-  let mesh_vert_length =
-    foreign "manifold_mesh_vert_length" (ptr Mesh.t @-> returning size_t)
-
-  let mesh_tri_length =
-    foreign "manifold_mesh_tri_length" (ptr Mesh.t @-> returning size_t)
-
-  let mesh_normal_length =
-    foreign "manifold_mesh_normal_length" (ptr Mesh.t @-> returning size_t)
-
-  let mesh_tangent_length =
-    foreign "manifold_mesh_tangent_length" (ptr Mesh.t @-> returning size_t)
-
-  let mesh_vert_pos =
-    foreign "manifold_mesh_vert_pos" (ptr void @-> ptr Mesh.t @-> returning (ptr Vec3.t))
-
-  let mesh_tri_verts =
-    foreign "manifold_mesh_tri_verts" (ptr void @-> ptr Mesh.t @-> returning (ptr IVec3.t))
-
-  let mesh_vert_normal =
-    foreign
-      "manifold_mesh_vert_normal"
-      (ptr void @-> ptr Mesh.t @-> returning (ptr Vec3.t))
-
-  let mesh_halfedge_tangent =
-    foreign
-      "manifold_mesh_halfedge_tangent"
-      (ptr void @-> ptr Mesh.t @-> returning (ptr Vec4.t))
-
-  let meshgl_vert_length =
-    foreign "manifold_meshgl_vert_length" (ptr MeshGL.t @-> returning size_t)
-
-  let meshgl_tri_length =
-    foreign "manifold_meshgl_tri_length" (ptr MeshGL.t @-> returning size_t)
-
-  let meshgl_normal_length =
-    foreign "manifold_meshgl_normal_length" (ptr MeshGL.t @-> returning size_t)
-
-  let meshgl_tangent_length =
-    foreign "manifold_meshgl_tangent_length" (ptr MeshGL.t @-> returning size_t)
-
-  let meshgl_vert_pos =
-    foreign
-      "manifold_meshgl_vert_pos"
-      (ptr void @-> ptr MeshGL.t @-> returning (ptr float))
-
-  let meshgl_tri_verts =
-    foreign
-      "manifold_meshgl_tri_verts"
-      (ptr void @-> ptr MeshGL.t @-> returning (ptr uint32_t))
-
-  let meshgl_vert_normal =
-    foreign
-      "manifold_meshgl_vert_normal"
-      (ptr void @-> ptr MeshGL.t @-> returning (ptr float))
-
-  let meshgl_halfedge_tangent =
-    foreign
-      "manifold_meshgl_halfedge_tangent"
-      (ptr void @-> ptr MeshGL.t @-> returning (ptr float))
-
-  (* Manifold Shapes / Constructors *)
-
-  let manifold_empty = foreign "manifold_empty" (ptr void @-> returning (ptr Manifold.t))
-
-  let manifold_copy =
-    foreign "manifold_copy" (ptr void @-> ptr Manifold.t @-> returning (ptr Manifold.t))
-
-  let manifold_tetrahedron =
-    foreign "manifold_tetrahedron" (ptr void @-> returning (ptr Manifold.t))
-
-  let manifold_cube =
-    foreign
-      "manifold_cube"
-      (ptr void @-> float @-> float @-> float @-> int @-> returning (ptr Manifold.t))
-
-  let manifold_cylinder =
-    foreign
-      "manifold_cylinder"
+      "clipper_paths64_xor"
       ( ptr void
-        @-> float
-        @-> float
-        @-> float
-        @-> int
-        @-> int
-        @-> returning (ptr Manifold.t) )
+      @-> ptr Paths64.t
+      @-> ptr Paths64.t
+      @-> FillRule.t
+      @-> returning (ptr Paths64.t) )
 
-  let manifold_sphere =
-    foreign "manifold_sphere" (ptr void @-> float @-> int @-> returning (ptr Manifold.t))
-
-  let manifold_of_mesh =
-    foreign "manifold_of_mesh" (ptr void @-> ptr Mesh.t @-> returning (ptr Manifold.t))
-
-  let manifold_of_mesh_props =
+  let pathsd_boolean_op =
     foreign
-      "manifold_of_mesh_props"
+      "clipper_pathsd_boolean_op"
       ( ptr void
-        @-> ptr Mesh.t
-        @-> ptr IVec3.t
-        @-> ptr float
-        @-> ptr float
-        @-> size_t
-        @-> returning (ptr Manifold.t) )
+      @-> ClipType.t
+      @-> FillRule.t
+      @-> ptr PathsD.t
+      @-> ptr PathsD.t
+      @-> int
+      @-> returning (ptr PathsD.t) )
 
-  let manifold_smooth =
+  let pathsd_intersect =
     foreign
-      "manifold_smooth"
+      "clipper_pathsd_intersect"
       ( ptr void
-        @-> ptr Mesh.t
-        @-> ptr int
-        @-> ptr float
-        @-> size_t
-        @-> returning (ptr Manifold.t) )
+      @-> ptr PathsD.t
+      @-> ptr PathsD.t
+      @-> FillRule.t
+      @-> int
+      @-> returning (ptr PathsD.t) )
 
-  let manifold_extrude =
+  let pathsd_union =
     foreign
-      "manifold_extrude"
+      "clipper_pathsd_union"
       ( ptr void
-        @-> ptr Polygons.t
-        @-> float
-        @-> int
-        @-> float
-        @-> float
-        @-> float
-        @-> returning (ptr Manifold.t) )
+      @-> ptr PathsD.t
+      @-> ptr PathsD.t
+      @-> FillRule.t
+      @-> int
+      @-> returning (ptr PathsD.t) )
 
-  let manifold_revolve =
+  let pathsd_difference =
     foreign
-      "manifold_revolve"
-      (ptr void @-> ptr Polygons.t @-> int @-> returning (ptr Manifold.t))
-
-  let manifold_compose =
-    foreign
-      "manifold_compose"
-      (ptr void @-> ptr (ptr Manifold.t) @-> size_t @-> returning (ptr Manifold.t))
-
-  let manifold_get_components =
-    foreign
-      "manifold_get_components"
-      (ptr void @-> ptr Manifold.t @-> returning (ptr Components.t))
-
-  let manifold_components_length =
-    foreign "manifold_components_length" (ptr Components.t @-> returning size_t)
-
-  let manifold_decompose =
-    foreign
-      "manifold_decompose"
-      ( ptr (ptr void)
-        @-> ptr Manifold.t
-        @-> ptr Components.t
-        @-> returning (ptr (ptr Manifold.t)) )
-
-  let manifold_as_original =
-    foreign
-      "manifold_as_original"
-      (ptr void @-> ptr Manifold.t @-> returning (ptr Manifold.t))
-
-  (* Booleans *)
-
-  let manifold_union =
-    foreign
-      "manifold_union"
-      (ptr void @-> ptr Manifold.t @-> ptr Manifold.t @-> returning (ptr Manifold.t))
-
-  let manifold_difference =
-    foreign
-      "manifold_difference"
-      (ptr void @-> ptr Manifold.t @-> ptr Manifold.t @-> returning (ptr Manifold.t))
-
-  let manifold_intersection =
-    foreign
-      "manifold_intersection"
-      (ptr void @-> ptr Manifold.t @-> ptr Manifold.t @-> returning (ptr Manifold.t))
-
-  let manifold_split =
-    foreign
-      "manifold_split"
+      "clipper_pathsd_difference"
       ( ptr void
-        @-> ptr void
-        @-> ptr Manifold.t
-        @-> ptr Manifold.t
-        @-> returning ManifoldPair.t )
+      @-> ptr PathsD.t
+      @-> ptr PathsD.t
+      @-> FillRule.t
+      @-> int
+      @-> returning (ptr PathsD.t) )
 
-  let manifold_split_by_plane =
+  let pathsd_xor =
     foreign
-      "manifold_split_by_plane"
+      "clipper_pathsd_xor"
       ( ptr void
-        @-> ptr void
-        @-> ptr Manifold.t
-        @-> float
-        @-> float
-        @-> float
-        @-> float
-        @-> returning ManifoldPair.t )
+      @-> ptr PathsD.t
+      @-> ptr PathsD.t
+      @-> FillRule.t
+      @-> int
+      @-> returning (ptr PathsD.t) )
 
-  let manifold_trim_by_plane =
+  (* Path Offsetting *)
+
+  let paths64_inflate =
     foreign
-      "manifold_trim_by_plane"
+      "clipper_paths64_inflate"
       ( ptr void
-        @-> ptr Manifold.t
-        @-> float
-        @-> float
-        @-> float
-        @-> float
-        @-> returning (ptr Manifold.t) )
+      @-> ptr Paths64.t
+      @-> double
+      @-> JoinType.t
+      @-> EndType.t
+      @-> double
+      @-> returning (ptr Paths64.t) )
 
-  (* Transformations *)
-
-  let manifold_translate =
+  let pathsd_inflate =
     foreign
-      "manifold_translate"
+      "clipper_pathsd_inflate"
       ( ptr void
-        @-> ptr Manifold.t
-        @-> float
-        @-> float
-        @-> float
-        @-> returning (ptr Manifold.t) )
+      @-> ptr PathsD.t
+      @-> double
+      @-> JoinType.t
+      @-> EndType.t
+      @-> double
+      @-> int
+      @-> returning (ptr PathsD.t) )
 
-  let manifold_rotate =
+  (* Rect Clipping *)
+
+  let path64_bounds =
     foreign
-      "manifold_rotate"
+      "clipper_path64_bounds"
+      (ptr void @-> ptr Path64.t @-> returning (ptr Rect64.t))
+
+  let pathd_bounds =
+    foreign "clipper_pathd_bounds" (ptr void @-> ptr PathD.t @-> returning (ptr RectD.t))
+
+  let paths64_bounds =
+    foreign
+      "clipper_paths64_bounds"
+      (ptr void @-> ptr Paths64.t @-> returning (ptr Rect64.t))
+
+  let pathsd_bounds =
+    foreign "clipper_pathsd_bounds" (ptr void @-> ptr PathsD.t @-> returning (ptr RectD.t))
+
+  let path64_rect_clip =
+    foreign
+      "clipper_path64_rect_clip"
+      (ptr void @-> ptr Rect64.t @-> ptr Path64.t @-> returning (ptr Path64.t))
+
+  let pathd_rect_clip =
+    foreign
+      "clipper_pathd_rect_clip"
+      (ptr void @-> ptr RectD.t @-> ptr PathD.t @-> int @-> returning (ptr PathD.t))
+
+  let paths64_rect_clip_line =
+    foreign
+      "clipper_paths64_rect_clip_line"
+      (ptr void @-> ptr Rect64.t @-> ptr Path64.t @-> returning (ptr Paths64.t))
+
+  let pathsd_rect_clip_line =
+    foreign
+      "clipper_pathsd_rect_clip_line"
+      (ptr void @-> ptr RectD.t @-> ptr PathD.t @-> int @-> returning (ptr PathsD.t))
+
+  let paths64_rect_clip_lines =
+    foreign
+      "clipper_paths64_rect_clip_lines"
+      (ptr void @-> ptr Rect64.t @-> ptr Paths64.t @-> returning (ptr Paths64.t))
+
+  let pathsd_rect_clip_lines =
+    foreign
+      "clipper_pathsd_rect_clip_lines"
+      (ptr void @-> ptr RectD.t @-> ptr PathsD.t @-> int @-> returning (ptr PathsD.t))
+
+  (* Path Constructors *)
+
+  let path64 = foreign "clipper_path64" (ptr void @-> returning (ptr Path64.t))
+  let pathd = foreign "clipper_pathd" (ptr void @-> returning (ptr PathD.t))
+
+  let path64_of_string =
+    foreign "clipper_path64_of_string" (ptr void @-> ptr char @-> returning (ptr Path64.t))
+
+  let pathd_of_string =
+    foreign "clipper_pathd_of_string" (ptr void @-> ptr char @-> returning (ptr PathD.t))
+
+  let path64_of_points =
+    foreign
+      "clipper_path64_of_points"
+      (ptr void @-> ptr Point64.t @-> size_t @-> returning (ptr Path64.t))
+
+  let pathd_of_points =
+    foreign
+      "clipper_pathd_of_points"
+      (ptr void @-> ptr PointD.t @-> size_t @-> returning (ptr PathD.t))
+
+  let path64_add_point =
+    foreign "clipper_path64_add_point" (ptr Path64.t @-> Point64.t @-> returning void)
+
+  let pathd_add_point =
+    foreign "clipper_pathd_add_point" (ptr PathD.t @-> PointD.t @-> returning void)
+
+  let path64_ellipse =
+    foreign
+      "clipper_path64_ellipse"
+      (ptr void @-> Point64.t @-> double @-> double @-> int @-> returning void)
+
+  let pathd_ellipse =
+    foreign
+      "clipper_pathd_ellipse"
+      (ptr void @-> PointD.t @-> double @-> double @-> int @-> returning void)
+
+  let paths64 = foreign "clipper_paths64" (ptr void @-> returning (ptr Paths64.t))
+  let pathsd = foreign "clipper_pathsd" (ptr void @-> returning (ptr PathsD.t))
+
+  let paths64_of_paths =
+    foreign
+      "clipper_paths64_of_paths"
+      (ptr void @-> ptr (ptr Path64.t) @-> size_t @-> returning (ptr Paths64.t))
+
+  let pathsd_of_paths =
+    foreign
+      "clipper_pathsd_of_paths"
+      (ptr void @-> ptr (ptr PathD.t) @-> size_t @-> returning (ptr PathsD.t))
+
+  let paths64_add_path =
+    foreign "clipper_paths64_add_path" (ptr Paths64.t @-> ptr Path64.t @-> returning void)
+
+  let pathsd_add_path =
+    foreign "clipper_pathsd_add_path" (ptr PathsD.t @-> ptr PathD.t @-> returning void)
+
+  (* Path Conversions (to C) *)
+
+  let path64_length = foreign "clipper_path64_length" (ptr Path64.t @-> returning size_t)
+  let pathd_length = foreign "clipper_pathd_length" (ptr PathD.t @-> returning size_t)
+
+  let path64_to_points =
+    foreign
+      "clipper_path64_to_points"
+      (ptr void @-> ptr Path64.t @-> returning (ptr Point64.t))
+
+  let pathd_to_points =
+    foreign
+      "clipper_pathd_to_points"
+      (ptr void @-> ptr PathD.t @-> returning (ptr PointD.t))
+
+  let paths64_length =
+    foreign "clipper_paths64_length" (ptr Paths64.t @-> returning size_t)
+
+  let pathsd_length = foreign "clipper_pathsd_length" (ptr PathsD.t @-> returning size_t)
+
+  let paths64_lengths =
+    foreign
+      "clipper_paths64_lengths"
+      (ptr void @-> ptr Paths64.t @-> returning (ptr size_t))
+
+  let pathsd_lengths =
+    foreign "clipper_pathsd_lengths" (ptr void @-> ptr PathsD.t @-> returning (ptr size_t))
+
+  let paths64_get =
+    foreign
+      "clipper_paths64_get"
+      (ptr void @-> ptr Paths64.t @-> int @-> returning (ptr Path64.t))
+
+  let pathsd_get =
+    foreign
+      "clipper_pathsd_get"
+      (ptr void @-> ptr PathsD.t @-> int @-> returning (ptr PathD.t))
+
+  let paths64_to_points =
+    foreign
+      "clipper_paths64_to_points"
+      (ptr (ptr void) @-> ptr Paths64.t @-> returning (ptr (ptr Point64.t)))
+
+  let pathsd_to_points =
+    foreign
+      "clipper_pathsd_to_points"
+      (ptr (ptr void) @-> ptr PathsD.t @-> returning (ptr (ptr PointD.t)))
+
+  (* Path Transformations *)
+
+  let path64_translate =
+    foreign
+      "clipper_path64_translate"
+      (ptr void @-> ptr Path64.t @-> int64_t @-> int64_t @-> returning (ptr Path64.t))
+
+  let pathd_translate =
+    foreign
+      "clipper_pathd_translate"
+      (ptr void @-> ptr PathD.t @-> double @-> double @-> returning (ptr PathD.t))
+
+  let paths64_translate =
+    foreign
+      "clipper_paths64_translate"
+      (ptr void @-> ptr Paths64.t @-> int64_t @-> int64_t @-> returning (ptr Paths64.t))
+
+  let pathsd_translate =
+    foreign
+      "clipper_pathsd_translate"
+      (ptr void @-> ptr PathsD.t @-> double @-> double @-> returning (ptr PathsD.t))
+
+  let path64_trim_collinear =
+    foreign
+      "clipper_path64_trim_collinear"
+      (ptr void @-> ptr Path64.t @-> int @-> returning (ptr Path64.t))
+
+  let pathd_trim_collinear =
+    foreign
+      "clipper_pathd_trim_collinear"
+      (ptr void @-> ptr PathD.t @-> int @-> int @-> returning (ptr PathD.t))
+
+  let path64_ramer_douglas_peucker =
+    foreign
+      "clipper_path64_ramer_douglas_peucker"
+      (ptr void @-> ptr Path64.t @-> double @-> returning (ptr Path64.t))
+
+  let pathd_ramer_douglas_peucker =
+    foreign
+      "clipper_pathd_ramer_douglas_peucker"
+      (ptr void @-> ptr PathD.t @-> double @-> returning (ptr PathD.t))
+
+  let paths64_ramer_douglas_peucker =
+    foreign
+      "clipper_paths64_ramer_douglas_peucker"
+      (ptr void @-> ptr Paths64.t @-> double @-> returning (ptr Paths64.t))
+
+  let pathsd_ramer_douglas_peucker =
+    foreign
+      "clipper_pathsd_ramer_douglas_peucker"
+      (ptr void @-> ptr PathsD.t @-> double @-> returning (ptr PathsD.t))
+
+  (* Minkowski *)
+
+  let path64_minkowski_sum =
+    foreign
+      "clipper_path64_minkowski_sum"
+      (ptr void @-> ptr Path64.t @-> ptr Path64.t @-> int @-> returning (ptr Paths64.t))
+
+  let pathd_minkowski_sum =
+    foreign
+      "clipper_pathd_minkowski_sum"
       ( ptr void
-        @-> ptr Manifold.t
-        @-> float
-        @-> float
-        @-> float
-        @-> returning (ptr Manifold.t) )
+      @-> ptr PathD.t
+      @-> ptr PathD.t
+      @-> int
+      @-> int
+      @-> returning (ptr PathsD.t) )
 
-  let manifold_scale =
+  let path64_minkowski_diff =
     foreign
-      "manifold_scale"
+      "clipper_path64_minkowski_diff"
+      (ptr void @-> ptr Path64.t @-> ptr Path64.t @-> int @-> returning (ptr Paths64.t))
+
+  let pathd_minkowski_diff =
+    foreign
+      "clipper_pathd_minkowski_diff"
       ( ptr void
-        @-> ptr Manifold.t
-        @-> float
-        @-> float
-        @-> float
-        @-> returning (ptr Manifold.t) )
+      @-> ptr PathD.t
+      @-> ptr PathD.t
+      @-> int
+      @-> int
+      @-> returning (ptr PathsD.t) )
 
-  let manifold_transform =
+  (* Geometry *)
+
+  let point64_distance =
+    foreign "clipper_point64_distance" (Point64.t @-> Point64.t @-> returning double)
+
+  let pointd_distance =
+    foreign "clipper_pointd_distance" (PointD.t @-> PointD.t @-> returning double)
+
+  let point64_near_collinear =
     foreign
-      "manifold_transform"
+      "clipper_point64_near_collinear"
+      (Point64.t @-> Point64.t @-> Point64.t @-> double @-> returning bool)
+
+  let pointd_near_collinear =
+    foreign
+      "clipper_pointd_near_collinear"
+      (PointD.t @-> PointD.t @-> PointD.t @-> double @-> returning bool)
+
+  (* Class Interfaces *)
+
+  (* PolyTree Constructors *)
+
+  let polytree64 =
+    foreign
+      "clipper_polytree64"
+      (ptr void @-> ptr PolyTree64.t @-> returning (ptr PolyTree64.t))
+
+  let polytreed =
+    foreign
+      "clipper_polytreed"
+      (ptr void @-> ptr PolyTreeD.t @-> returning (ptr PolyTreeD.t))
+
+  (* PolyTree64 Methods *)
+
+  let polytree64_get =
+    foreign
+      "clipper_polytree64_get"
+      (ptr PolyTree64.t @-> size_t @-> returning (ptr PolyTree64.t))
+
+  let polytree64_add_child =
+    foreign
+      "clipper_polytree64_add_child"
+      (ptr PolyTree64.t @-> ptr Path64.t @-> returning (ptr PolyTree64.t))
+
+  let polytree64_clear =
+    foreign "clipper_polytree64_clear" (ptr PolyTree64.t @-> returning void)
+
+  let polytree64_count =
+    foreign "clipper_polytree64_count" (ptr PolyTree64.t @-> returning size_t)
+
+  let polytree64_polygon =
+    foreign
+      "clipper_polytree64_polygon"
+      (ptr void @-> ptr PolyTree64.t @-> returning (ptr Path64.t))
+
+  let polytree64_area =
+    foreign "clipper_polytree64_area" (ptr PolyTree64.t @-> returning double)
+
+  let polytree64_to_paths =
+    foreign
+      "clipper_polytree64_to_paths"
+      (ptr void @-> ptr PolyTree64.t @-> returning (ptr Paths64.t))
+
+  let polytree64_fully_contains_children =
+    foreign
+      "clipper_polytree64_fully_contains_children"
+      (ptr PolyTree64.t @-> returning bool)
+
+  (* PolyTreeD Methods *)
+
+  let polytreed_get =
+    foreign
+      "clipper_polytreed_get"
+      (ptr PolyTreeD.t @-> size_t @-> returning (ptr PolyTreeD.t))
+
+  let polytreed_add_child =
+    foreign
+      "clipper_polytreed_add_child"
+      (ptr PolyTreeD.t @-> ptr Path64.t @-> returning (ptr PolyTreeD.t))
+
+  let polytreed_clear =
+    foreign "clipper_polytreed_clear" (ptr PolyTreeD.t @-> returning void)
+
+  let polytreed_count =
+    foreign "clipper_polytreed_count" (ptr PolyTreeD.t @-> returning size_t)
+
+  let polytreed_polygon =
+    foreign
+      "clipper_polytreed_polygon"
+      (ptr void @-> ptr PolyTreeD.t @-> returning (ptr PathD.t))
+
+  let polytreed_area =
+    foreign "clipper_polytreed_area" (ptr PolyTreeD.t @-> returning double)
+
+  let polytreed_to_paths =
+    foreign
+      "clipper_polytreed_to_paths"
+      (ptr void @-> ptr PolyTreeD.t @-> returning (ptr PathsD.t))
+
+  let polytreed_set_inv_scale =
+    foreign
+      "clipper_polytreed_set_inv_scale"
+      (ptr PolyTreeD.t @-> double @-> returning void)
+
+  let polytreed_inv_scale =
+    foreign "clipper_polytreed_inv_scale" (ptr PolyTreeD.t @-> returning double)
+
+  (* Rect Constructors *)
+
+  let rect64 =
+    foreign
+      "clipper_rect64"
       ( ptr void
-        @-> ptr Manifold.t
-        @-> float
-        @-> float
-        @-> float
-        @-> float
-        @-> float
-        @-> float
-        @-> float
-        @-> float
-        @-> float
-        @-> float
-        @-> float
-        @-> float
-        @-> returning (ptr Manifold.t) )
+      @-> int64_t
+      @-> int64_t
+      @-> int64_t
+      @-> int64_t
+      @-> returning (ptr Rect64.t) )
 
-  let warp_t = Ctypes.(float @-> float @-> float @-> returning Vec3.t)
-
-  let manifold_warp =
+  let rectd =
     foreign
-      "manifold_warp"
-      (ptr void @-> ptr Manifold.t @-> static_funptr warp_t @-> returning (ptr Manifold.t))
+      "clipper_rectd"
+      (ptr void @-> double @-> double @-> double @-> double @-> returning (ptr RectD.t))
 
-  let manifold_refine =
+  (* Rect64 Methods *)
+
+  let rect64_width = foreign "clipper_rect64_width" (ptr Rect64.t @-> returning int64_t)
+  let rect64_height = foreign "clipper_rect64_height" (ptr Rect64.t @-> returning int64_t)
+
+  let rect64_midpoint =
+    foreign "clipper_rect64_midpoint" (ptr Rect64.t @-> returning Point64.t)
+
+  let rect64_as_path =
     foreign
-      "manifold_refine"
-      (ptr void @-> ptr Manifold.t @-> int @-> returning (ptr Manifold.t))
+      "clipper_rect64_as_path"
+      (ptr void @-> ptr Rect64.t @-> returning (ptr Path64.t))
 
-  (* Manifold Mutation *)
+  let rect64_contains_pt =
+    foreign "clipper_rect64_contains_pt" (ptr Rect64.t @-> Point64.t @-> returning bool)
 
-  let manifold_set_min_circular_angle =
-    foreign "manifold_set_min_circular_angle" (float @-> returning void)
-
-  let manifold_set_min_circular_edge_length =
-    foreign "manifold_set_min_circular_edge_length" (float @-> returning void)
-
-  let manifold_set_circular_segments =
-    foreign "manifold_set_circular_segments" (int @-> returning void)
-
-  (* Manifold Info *)
-
-  let manifold_is_empty = foreign "manifold_is_empty" (ptr Manifold.t @-> returning int)
-  let manifold_status = foreign "manifold_status" (ptr Manifold.t @-> returning Status.t)
-  let manifold_num_vert = foreign "manifold_num_vert" (ptr Manifold.t @-> returning int)
-  let manifold_num_edge = foreign "manifold_num_edge" (ptr Manifold.t @-> returning int)
-  let manifold_num_tri = foreign "manifold_num_tri" (ptr Manifold.t @-> returning int)
-
-  let manifold_bounding_box =
-    foreign "manifold_bounding_box" (ptr void @-> ptr Manifold.t @-> returning (ptr Box.t))
-
-  let manifold_precision =
-    foreign "manifold_precision" (ptr Manifold.t @-> returning float)
-
-  let manifold_genus = foreign "manifold_genus" (ptr Manifold.t @-> returning int)
-
-  let manifold_get_properties =
-    foreign "manifold_get_properties" (ptr Manifold.t @-> returning Properties.t)
-
-  let manifold_get_curvature =
+  let rect64_contains_rect =
     foreign
-      "manifold_get_curvature"
-      (ptr void @-> ptr Manifold.t @-> returning (ptr Curvature.t))
+      "clipper_rect64_contains_rect"
+      (ptr Rect64.t @-> ptr Rect64.t @-> returning bool)
 
-  let curvature_bounds =
-    foreign "manifold_curvature_bounds" (ptr Curvature.t @-> returning CurvatureBounds.t)
+  let rect64_scale =
+    foreign "clipper_rect64_scale" (ptr Rect64.t @-> double @-> returning void)
 
-  let curvature_vert_length =
-    foreign "manifold_curvature_vert_length" (ptr Curvature.t @-> returning size_t)
+  let rect64_is_empty = foreign "clipper_rect64_is_empty" (ptr Rect64.t @-> returning bool)
 
-  let curvature_vert_mean =
+  let rect64_intersects =
+    foreign "clipper_rect64_intersects" (ptr Rect64.t @-> ptr Rect64.t @-> returning bool)
+
+  (* RectD Methods *)
+
+  let rectd_width = foreign "clipper_rectd_width" (ptr RectD.t @-> returning double)
+  let rectd_height = foreign "clipper_rectd_height" (ptr RectD.t @-> returning double)
+
+  let rectd_midpoint =
+    foreign "clipper_rectd_midpoint" (ptr RectD.t @-> returning PointD.t)
+
+  let rectd_as_path =
+    foreign "clipper_rectd_as_path" (ptr void @-> ptr RectD.t @-> returning (ptr PathD.t))
+
+  let rectd_contains_pt =
+    foreign "clipper_rectd_contains_pt" (ptr RectD.t @-> PointD.t @-> returning bool)
+
+  let rectd_contains_rect =
+    foreign "clipper_rectd_contains_rect" (ptr RectD.t @-> ptr RectD.t @-> returning bool)
+
+  let rectd_scale =
+    foreign "clipper_rectd_scale" (ptr RectD.t @-> double @-> returning void)
+
+  let rectd_is_empty = foreign "clipper_rectd_is_empty" (ptr RectD.t @-> returning bool)
+
+  let rectd_intersects =
+    foreign "clipper_rectd_intersects" (ptr RectD.t @-> ptr RectD.t @-> returning bool)
+
+  (* Clipper Contsructors *)
+
+  let clipper64 = foreign "clipper_clipper64" (ptr void @-> returning (ptr Clipper64.t))
+
+  let clipperd =
+    foreign "clipper_clipperd" (ptr void @-> int @-> returning (ptr ClipperD.t))
+
+  (* Clipper64 Setters / Getters *)
+
+  let clipper64_set_preserve_collinear =
     foreign
-      "manifold_curvature_vert_mean"
-      (ptr void @-> ptr Curvature.t @-> returning (ptr float))
+      "clipper_clipper64_set_preserve_collinear"
+      (ptr Clipper64.t @-> bool @-> returning void)
 
-  let curvature_vert_gaussian =
+  let clipper64_set_reverse_solution =
     foreign
-      "manifold_curvature_vert_gaussian"
-      (ptr void @-> ptr Curvature.t @-> returning (ptr float))
+      "clipper_clipper64_set_reverse_solution"
+      (ptr Clipper64.t @-> bool @-> returning void)
 
-  let manifold_get_circular_segments =
-    foreign "manifold_get_circular_segments" (float @-> returning int)
+  let clipper64_get_preserve_collinear =
+    foreign "clipper_clipper64_get_preserve_collinear" (ptr Clipper64.t @-> returning bool)
 
-  let manifold_original_id =
-    foreign "manifold_original_id" (ptr Manifold.t @-> returning int)
+  let clipper64_get_reverse_solution =
+    foreign "clipper_clipper64_get_reverse_solution" (ptr Clipper64.t @-> returning bool)
 
-  (* Bounding Box *)
+  let clipper64_clear =
+    foreign "clipper_clipper64_clear" (ptr Clipper64.t @-> returning void)
 
-  let box =
+  (* ClipperD Setters / Getters *)
+
+  let clipperd_set_preserve_collinear =
     foreign
-      "manifold_box"
-      ( ptr void
-        @-> float
-        @-> float
-        @-> float
-        @-> float
-        @-> float
-        @-> float
-        @-> returning (ptr Box.t) )
+      "clipper_clipperd_set_preserve_collinear"
+      (ptr ClipperD.t @-> bool @-> returning void)
 
-  let box_min = foreign "manifold_box_min" (ptr Box.t @-> returning Vec3.t)
-  let box_max = foreign "manifold_box_max" (ptr Box.t @-> returning Vec3.t)
-  let box_dimensions = foreign "manifold_box_dimensions" (ptr Box.t @-> returning Vec3.t)
-  let box_center = foreign "manifold_box_center" (ptr Box.t @-> returning Vec3.t)
-  let box_scale = foreign "manifold_box_scale" (ptr Box.t @-> returning float)
-
-  let box_contains_pt =
+  let clipperd_set_reverse_solution =
     foreign
-      "manifold_box_contains_pt"
-      (ptr Box.t @-> float @-> float @-> float @-> returning int)
+      "clipper_clipperd_set_reverse_solution"
+      (ptr ClipperD.t @-> bool @-> returning void)
 
-  let box_contains_box =
-    foreign "manifold_box_contains_box" (ptr Box.t @-> ptr Box.t @-> returning int)
+  let clipperd_get_preserve_collinear =
+    foreign "clipper_clipperd_get_preserve_collinear" (ptr ClipperD.t @-> returning bool)
 
-  let box_include_pt =
+  let clipperd_get_reverse_solution =
+    foreign "clipper_clipperd_get_reverse_solution" (ptr ClipperD.t @-> returning bool)
+
+  let clipperd_clear = foreign "clipper_clipperd_clear" (ptr ClipperD.t @-> returning void)
+
+  (* Clipper64 Methods *)
+
+  let clipper64_add_subject =
     foreign
-      "manifold_box_include_pt"
-      (ptr Box.t @-> float @-> float @-> float @-> returning void)
+      "clipper_clipper64_add_subject"
+      (ptr Clipper64.t @-> ptr Paths64.t @-> returning void)
 
-  let box_union =
+  let clipper64_add_open_subject =
     foreign
-      "manifold_box_union"
-      (ptr void @-> ptr Box.t @-> ptr Box.t @-> returning (ptr Box.t))
+      "clipper_clipper64_add_open_subject"
+      (ptr Clipper64.t @-> ptr Paths64.t @-> returning void)
 
-  let box_transform =
+  let clipper64_add_clip =
     foreign
-      "manifold_box_transform"
-      ( ptr void
-        @-> ptr Box.t
-        @-> float
-        @-> float
-        @-> float
-        @-> float
-        @-> float
-        @-> float
-        @-> float
-        @-> float
-        @-> float
-        @-> float
-        @-> float
-        @-> float
-        @-> returning (ptr Box.t) )
+      "clipper_clipper64_add_clip"
+      (ptr Clipper64.t @-> ptr Paths64.t @-> returning void)
 
-  let box_translate =
+  let clipper64_execute =
     foreign
-      "manifold_box_translate"
-      (ptr void @-> ptr Box.t @-> float @-> float @-> float @-> returning (ptr Box.t))
+      "clipper_clipper64_execute"
+      ( ptr Clipper64.t
+      @-> ClipType.t
+      @-> FillRule.t
+      @-> ptr Paths64.t
+      @-> ptr Paths64.t
+      @-> returning bool )
 
-  let box_mul =
+  let clipper64_execute_tree =
     foreign
-      "manifold_box_mul"
-      (ptr void @-> ptr Box.t @-> float @-> float @-> float @-> returning (ptr Box.t))
+      "clipper_clipper64_execute_tree"
+      ( ptr Clipper64.t
+      @-> ClipType.t
+      @-> FillRule.t
+      @-> ptr PolyTree64.t
+      @-> returning bool )
 
-  let box_does_overlap_pt =
+  let clipper64_execute_tree_with_open =
     foreign
-      "manifold_box_does_overlap_pt"
-      (ptr Box.t @-> float @-> float @-> float @-> returning int)
+      "clipper_clipper64_execute_tree_with_open"
+      ( ptr Clipper64.t
+      @-> ClipType.t
+      @-> FillRule.t
+      @-> ptr PolyTree64.t
+      @-> ptr Paths64.t
+      @-> returning bool )
 
-  let box_does_overlap_box =
-    foreign "manifold_box_does_overlap_box" (ptr Box.t @-> ptr Box.t @-> returning int)
+  (* ClipperD Methods *)
 
-  let box_is_finite = foreign "manifold_box_is_finite" (ptr Box.t @-> returning int)
-
-  (* SDF *)
-
-  let sdf_t = Ctypes.(float @-> float @-> float @-> returning float)
-
-  let level_set_seq =
+  let clipperd_add_subject =
     foreign
-      "manifold_level_set_seq"
-      ( ptr void
-        @-> static_funptr sdf_t
-        @-> ptr Box.t
-        @-> float
-        @-> float
-        @-> returning (ptr Mesh.t) )
+      "clipper_clipperd_add_subject"
+      (ptr ClipperD.t @-> ptr PathsD.t @-> returning void)
 
-  (* Export *)
-  let material = foreign "manifold_material" (ptr void @-> returning (ptr Material.t))
-
-  let material_set_roughness =
-    foreign "manifold_material_set_roughness" (ptr Material.t @-> float @-> returning void)
-
-  let material_set_metalness =
-    foreign "manifold_material_set_metalness" (ptr Material.t @-> float @-> returning void)
-
-  let material_set_color =
-    foreign "manifold_material_set_color" (ptr Material.t @-> Vec4.t @-> returning void)
-
-  let material_set_vert_color =
+  let clipperd_add_open_subject =
     foreign
-      "manifold_material_set_vert_color"
-      (ptr Material.t @-> ptr Vec4.t @-> size_t @-> returning void)
+      "clipper_clipperd_add_open_subject"
+      (ptr ClipperD.t @-> ptr PathsD.t @-> returning void)
 
-  let export_options =
-    foreign "manifold_export_options" (ptr void @-> returning (ptr ExportOptions.t))
-
-  let export_options_set_faceted =
+  let clipperd_add_clip =
     foreign
-      "manifold_export_options_set_faceted"
-      (ptr ExportOptions.t @-> int @-> returning void)
+      "clipper_clipperd_add_clip"
+      (ptr ClipperD.t @-> ptr PathsD.t @-> returning void)
 
-  let export_options_set_material =
+  let clipperd_execute =
     foreign
-      "manifold_export_options_set_material"
-      (ptr ExportOptions.t @-> ptr Material.t @-> returning void)
+      "clipper_clipperd_execute"
+      ( ptr ClipperD.t
+      @-> ClipType.t
+      @-> FillRule.t
+      @-> ptr PathsD.t
+      @-> ptr PathsD.t
+      @-> returning bool )
 
-  let export_mesh =
+  let clipperd_execute_tree =
     foreign
-      "manifold_export_mesh"
-      (ptr char @-> ptr Mesh.t @-> ptr ExportOptions.t @-> returning void)
+      "clipper_clipperd_execute_tree"
+      (ptr ClipperD.t @-> ClipType.t @-> FillRule.t @-> ptr PolyTreeD.t @-> returning bool)
 
-  (* Sizes for allocation *)
+  let clipperd_execute_tree_with_open =
+    foreign
+      "clipper_clipperd_execute_tree_with_open"
+      ( ptr ClipperD.t
+      @-> ClipType.t
+      @-> FillRule.t
+      @-> ptr PolyTreeD.t
+      @-> ptr PathsD.t
+      @-> returning bool )
 
-  let manifold_size = foreign "manifold_manifold_size" (void @-> returning size_t)
+  (* memory size *)
 
-  let simple_polygon_size =
-    foreign "manifold_simple_polygon_size" (void @-> returning size_t)
+  let path64_size = foreign "clipper_path64_size" (ptr Path64.t @-> returning size_t)
+  let pathd_size = foreign "clipper_pathd_size" (ptr PathD.t @-> returning size_t)
+  let paths64_size = foreign "clipper_paths64_size" (ptr Paths64.t @-> returning size_t)
+  let pathsd_size = foreign "clipper_pathsd_size" (ptr PathsD.t @-> returning size_t)
+  let rect64_size = foreign "clipper_rect64_size" (ptr Rect64.t @-> returning size_t)
+  let rectd_size = foreign "clipper_rectd_size" (ptr RectD.t @-> returning size_t)
 
-  let polygons_size = foreign "manifold_polygons_size" (void @-> returning size_t)
-  let pair_size = foreign "manifold_manifold_pair_size" (void @-> returning size_t)
-  let mesh_size = foreign "manifold_mesh_size" (void @-> returning size_t)
-  let meshgl_size = foreign "manifold_meshgl_size" (void @-> returning size_t)
-  let box_size = foreign "manifold_box_size" (void @-> returning size_t)
-  let curvature_size = foreign "manifold_curvature_size" (void @-> returning size_t)
-  let components_size = foreign "manifold_components_size" (void @-> returning size_t)
+  let polytree64_size =
+    foreign "clipper_polytree64_size" (ptr PolyTree64.t @-> returning size_t)
 
-  let mesh_relation_size =
-    foreign "manifold_mesh_relation_size" (void @-> returning size_t)
+  let polytreed_size =
+    foreign "clipper_polytreed_size" (ptr PolyTreeD.t @-> returning size_t)
 
-  let material_size = foreign "manifold_material_size" (void @-> returning size_t)
+  let clipper64_size =
+    foreign "clipper_clipper64_size" (ptr Clipper64.t @-> returning size_t)
 
-  let export_options_size =
-    foreign "manifold_export_options_size" (void @-> returning size_t)
+  let clipperd_size = foreign "clipper_clipperd_size" (ptr ClipperD.t @-> returning size_t)
 
-  (* Destruction *)
+  (* destruction *)
 
-  let destruct_manifold =
-    foreign "manifold_destruct_manifold" (ptr Manifold.t @-> returning void)
+  let destruct_path64 = foreign "clipper_destruct_path64" (ptr Path64.t @-> returning void)
+  let destruct_pathd = foreign "clipper_destruct_pathd" (ptr PathD.t @-> returning void)
 
-  let destruct_simple_polygon =
-    foreign "manifold_destruct_simple_polygon" (ptr SimplePolygon.t @-> returning void)
+  let destruct_paths64 =
+    foreign "clipper_destruct_paths64" (ptr Paths64.t @-> returning void)
 
-  let destruct_polygons =
-    foreign "manifold_destruct_polygons" (ptr Polygons.t @-> returning void)
+  let destruct_pathsd = foreign "clipper_destruct_pathsd" (ptr PathsD.t @-> returning void)
+  let destruct_rect64 = foreign "clipper_destruct_rect64" (ptr Rect64.t @-> returning void)
+  let destruct_rectd = foreign "clipper_destruct_rectd" (ptr RectD.t @-> returning void)
 
-  let destruct_mesh = foreign "manifold_destruct_mesh" (ptr Mesh.t @-> returning void)
+  let destruct_polytree64 =
+    foreign "clipper_destruct_polytree64" (ptr PolyTree64.t @-> returning void)
 
-  let destruct_meshgl =
-    foreign "manifold_destruct_meshgl" (ptr MeshGL.t @-> returning void)
+  let destruct_polytreed =
+    foreign "clipper_destruct_polytreed" (ptr PolyTreeD.t @-> returning void)
 
-  let destruct_box = foreign "manifold_destruct_box" (ptr Box.t @-> returning void)
+  let destruct_clipper64 =
+    foreign "clipper_destruct_clipper64" (ptr Clipper64.t @-> returning void)
 
-  let destruct_curvature =
-    foreign "manifold_destruct_curvature" (ptr Curvature.t @-> returning void)
+  let destruct_clipperd =
+    foreign "clipper_destruct_clipperd" (ptr ClipperD.t @-> returning void)
 
-  let destruct_components =
-    foreign "manifold_destruct_components" (ptr Components.t @-> returning void)
+  (* pointer free + destruction *)
 
-  let destruct_mesh_relation =
-    foreign "manifold_destruct_mesh_relation" (ptr MeshRelation.t @-> returning void)
+  let delete_path64 = foreign "clipper_delete_path64" (ptr Path64.t @-> returning void)
+  let delete_pathd = foreign "clipper_delete_pathd" (ptr PathD.t @-> returning void)
+  let delete_paths64 = foreign "clipper_delete_paths64" (ptr Paths64.t @-> returning void)
+  let delete_pathsd = foreign "clipper_delete_pathsd" (ptr PathsD.t @-> returning void)
+  let delete_rect64 = foreign "clipper_delete_rect64" (ptr Rect64.t @-> returning void)
+  let delete_rectd = foreign "clipper_delete_rectd" (ptr RectD.t @-> returning void)
 
-  let destruct_material =
-    foreign "manifold_destruct_material" (ptr Material.t @-> returning void)
+  let delete_polytree64 =
+    foreign "clipper_delete_polytree64" (ptr PolyTree64.t @-> returning void)
 
-  let destruct_export_options =
-    foreign "manifold_destruct_export_options" (ptr ExportOptions.t @-> returning void)
+  let delete_polytreed =
+    foreign "clipper_delete_polytreed" (ptr PolyTreeD.t @-> returning void)
 
-  (* Deletion / Free *)
+  let delete_clipper64 =
+    foreign "clipper_delete_clipper64" (ptr Clipper64.t @-> returning void)
 
-  let delete_manifold =
-    foreign "manifold_delete_manifold" (ptr Manifold.t @-> returning void)
-
-  let delete_simple_polygon =
-    foreign "manifold_delete_simple_polygon" (ptr SimplePolygon.t @-> returning void)
-
-  let delete_polygons =
-    foreign "manifold_delete_polygons" (ptr Polygons.t @-> returning void)
-
-  let delete_mesh = foreign "manifold_delete_mesh" (ptr Mesh.t @-> returning void)
-  let delete_meshgl = foreign "manifold_delete_meshgl" (ptr MeshGL.t @-> returning void)
-  let delete_box = foreign "manifold_delete_box" (ptr Box.t @-> returning void)
-
-  let delete_curvature =
-    foreign "manifold_delete_curvature" (ptr Curvature.t @-> returning void)
-
-  let delete_components =
-    foreign "manifold_delete_components" (ptr Components.t @-> returning void)
-
-  let delete_mesh_relation =
-    foreign "manifold_delete_mesh_relation" (ptr MeshRelation.t @-> returning void)
-
-  let delete_material =
-    foreign "manifold_delete_material" (ptr Material.t @-> returning void)
-
-  let delete_export_options =
-    foreign "manifold_delete_export_options" (ptr ExportOptions.t @-> returning void)
+  let delete_clipperd =
+    foreign "clipper_delete_clipperd" (ptr ClipperD.t @-> returning void)
 end

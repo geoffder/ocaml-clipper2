@@ -2,190 +2,191 @@ module Types (F : Cstubs.Types.TYPE) = struct
   open Ctypes
   open F
 
-  module Status = struct
-    let no_error = constant "NO_ERROR" int64_t
-    let non_finite_vertex = constant "NON_FINITE_VERTEX" int64_t
-    let not_manifold = constant "NOT_MANIFOLD" int64_t
-    let vertex_index_out_of_bounds = constant "VERTEX_INDEX_OUT_OF_BOUNDS" int64_t
-    let properties_wrong_length = constant "PROPERTIES_WRONG_LENGTH" int64_t
-    let tri_properties_wrong_length = constant "TRI_PROPERTIES_WRONG_LENGTH" int64_t
-    let tri_properties_out_of_bounds = constant "TRI_PROPERTIES_OUT_OF_BOUNDS" int64_t
+  module Clipper64 = struct
+    type t = [ `Clipper64 ] structure
+
+    let t : t typ = structure "ClipperClipper64"
+  end
+
+  module ClipperD = struct
+    type t = [ `ClipperD ] structure
+
+    let t : t typ = structure "ClipperClipperD"
+  end
+
+  module Path64 = struct
+    type t = [ `Path64 ] structure
+
+    let t : t typ = structure "ClipperPath64"
+  end
+
+  module PathD = struct
+    type t = [ `PathD ] structure
+
+    let t : t typ = structure "ClipperPathD"
+  end
+
+  module Paths64 = struct
+    type t = [ `Paths64 ] structure
+
+    let t : t typ = structure "ClipperPaths64"
+  end
+
+  module PathsD = struct
+    type t = [ `PathsD ] structure
+
+    let t : t typ = structure "ClipperPathsD"
+  end
+
+  module Rect64 = struct
+    type t = [ `Rect64 ] structure
+
+    let t : t typ = structure "ClipperRect64"
+  end
+
+  module RectD = struct
+    type t = [ `RectD ] structure
+
+    let t : t typ = structure "ClipperRectD"
+  end
+
+  module PolyTree64 = struct
+    type t = [ `PolyTree64 ] structure
+
+    let t : t typ = structure "ClipperPolyTree64"
+  end
+
+  module PolyTreeD = struct
+    type t = [ `PolyTreeD ] structure
+
+    let t : t typ = structure "ClipperPolyTreeD"
+  end
+
+  module Point64 = struct
+    type t = [ `Point64 ] structure
+
+    let t : t typ = structure "ClipperPoint64"
+    let x = field t "x" int64_t
+    let y = field t "y" int64_t
+    let () = seal t
+  end
+
+  module PointD = struct
+    type t = [ `PointD ] structure
+
+    let t : t typ = structure "ClipperPointD"
+    let x = field t "x" double
+    let y = field t "y" double
+    let () = seal t
+  end
+
+  module Rect64Struct = struct
+    type t = [ `Rect64Struct ] structure
+
+    let t : t typ = structure "ClipperRect64"
+    let left = field t "left" int64_t
+    let top = field t "top" int64_t
+    let right = field t "right" int64_t
+    let bottom = field t "bottom" int64_t
+    let () = seal t
+  end
+
+  module RectDStruct = struct
+    type t = [ `RectDStruct ] structure
+
+    let t : t typ = structure "ClipperRectD"
+    let left = field t "left" double
+    let top = field t "top" double
+    let right = field t "right" double
+    let bottom = field t "bottom" double
+    let () = seal t
+  end
+
+  module FillRule = struct
+    let even_odd = constant "EVEN_ODD" int64_t
+    let non_zero = constant "NON_ZERO" int64_t
+    let positive = constant "POSITIVE" int64_t
+    let negative = constant "NEGATIVE" int64_t
 
     type t =
-      | NoError
-      | NonFiniteVertex
-      | NotManifold
-      | VertexIndexOutOfBounds
-      | PropertiesWrongLength
-      | TriPropertiesWrongLength
-      | TriPropertiesOutOfBounds
+      | EvenOdd
+      | NonZero
+      | Positive
+      | Negative
 
     let t =
       enum
-        "ManifoldError"
-        [ NoError, no_error
-        ; NonFiniteVertex, non_finite_vertex
-        ; NotManifold, not_manifold
-        ; VertexIndexOutOfBounds, vertex_index_out_of_bounds
-        ; PropertiesWrongLength, properties_wrong_length
-        ; TriPropertiesWrongLength, tri_properties_wrong_length
-        ; TriPropertiesOutOfBounds, tri_properties_out_of_bounds
+        "ClipperFillRule"
+        [ EvenOdd, even_odd; NonZero, non_zero; Positive, positive; Negative, negative ]
+        ~unexpected:(fun _ -> assert false)
+  end
+
+  module ClipType = struct
+    let none = constant "NONE" int64_t
+    let intersection = constant "INTERSECTION" int64_t
+    let union = constant "UNION" int64_t
+    let difference = constant "DIFFERENCE" int64_t
+    let xor = constant "XOR" int64_t
+
+    type t =
+      | None
+      | Intersection
+      | Union
+      | Difference
+      | Xor
+
+    let t =
+      enum
+        "ClipperClipType"
+        [ None, none
+        ; Intersection, intersection
+        ; Union, union
+        ; Difference, difference
+        ; Xor, xor
         ]
         ~unexpected:(fun _ -> assert false)
   end
 
-  module Manifold = struct
-    type t = [ `Manifold ] structure
+  module JoinType = struct
+    let square_join = constant "SQUARE_JOIN" int64_t
+    let round_join = constant "ROUND_JOIN" int64_t
+    let miter_join = constant "MITER_JOIN" int64_t
 
-    let t : t typ = structure "ManifoldManifold"
+    type t =
+      | Square
+      | Round
+      | Miter
+
+    let t =
+      enum
+        "ClipperJoinType"
+        [ Square, square_join; Round, round_join; Miter, miter_join ]
+        ~unexpected:(fun _ -> assert false)
   end
 
-  module SimplePolygon = struct
-    type t = [ `SimplePolygon ] structure
+  module EndType = struct
+    let polygon_end = constant "POLYGON_END" int64_t
+    let joined_end = constant "JOINED_END" int64_t
+    let butt_end = constant "BUTT_END" int64_t
+    let square_end = constant "SQUARE_END" int64_t
+    let round_end = constant "ROUND_END" int64_t
 
-    let t : t typ = structure "ManifoldSimplePolygon"
-  end
+    type t =
+      | Polygon
+      | Joined
+      | Butt
+      | Square
+      | Round
 
-  module Polygons = struct
-    type t = [ `Polygons ] structure
-
-    let t : t typ = structure "ManifoldPolygons"
-  end
-
-  module Mesh = struct
-    type t = [ `Mesh ] structure
-
-    let t : t typ = structure "ManifoldMesh"
-  end
-
-  module MeshGL = struct
-    type t = [ `MeshGL ] structure
-
-    let t : t typ = structure "ManifoldMeshGL"
-  end
-
-  module Curvature = struct
-    type t = [ `Curvature ] structure
-
-    let t : t typ = structure "ManifoldCurvature"
-  end
-
-  module Components = struct
-    type t = [ `Components ] structure
-
-    let t : t typ = structure "ManifoldComponents"
-  end
-
-  module Properties = struct
-    type t = [ `Properties ] structure
-
-    let t : t typ = structure "ManifoldProperties"
-    let surface_area = field t "surface_area" float
-    let volume = field t "volume" float
-    let () = seal t
-  end
-
-  module MeshRelation = struct
-    type t = [ `MeshRelation ] structure
-
-    let t : t typ = structure "ManifoldMeshRelation"
-  end
-
-  module Box = struct
-    type t = [ `Box ] structure
-
-    let t : t typ = structure "ManifoldBox"
-  end
-
-  module Material = struct
-    type t = [ `Material ] structure
-
-    let t : t typ = structure "ManifoldMaterial"
-  end
-
-  module ExportOptions = struct
-    type t = [ `ExportOptions ] structure
-
-    let t : t typ = structure "ManifoldExportOptions"
-  end
-
-  module ManifoldPair = struct
-    type t = [ `ManifoldPair ] structure
-
-    let t : t typ = structure "ManifoldManifoldPair"
-    let first = field t "first" (ptr Manifold.t)
-    let second = field t "second" (ptr Manifold.t)
-    let () = seal t
-  end
-
-  module Vec2 = struct
-    type t = [ `Vec2 ] structure
-
-    let t : t typ = structure "ManifoldVec2"
-    let x = field t "x" float
-    let y = field t "y" float
-    let () = seal t
-  end
-
-  module Vec3 = struct
-    type t = [ `Vec3 ] structure
-
-    let t : t typ = structure "ManifoldVec3"
-    let x = field t "x" float
-    let y = field t "y" float
-    let z = field t "z" float
-    let () = seal t
-  end
-
-  module IVec3 = struct
-    type t = [ `IVec3 ] structure
-
-    let t : t typ = structure "ManifoldIVec3"
-    let x = field t "x" int
-    let y = field t "y" int
-    let z = field t "z" int
-    let () = seal t
-  end
-
-  module Vec4 = struct
-    type t = [ `Vec4 ] structure
-
-    let t : t typ = structure "ManifoldVec4"
-    let x = field t "x" float
-    let y = field t "y" float
-    let z = field t "z" float
-    let w = field t "w" float
-    let () = seal t
-  end
-
-  module PolyVert = struct
-    type t = [ `PolyVert ] structure
-
-    let t : t typ = structure "ManifoldPolyVert"
-    let pos = field t "pos" Vec2.t
-    let idx = field t "idx" int
-    let () = seal t
-  end
-
-  module BaryRef = struct
-    type t = [ `BaryRef ] structure
-
-    let t : t typ = structure "ManifoldBaryRef"
-    let mesh_id = field t "mesh_id" int
-    let original_id = field t "original_id" int
-    let tri = field t "tri" int
-    let vert_bary = field t "vert_bary" IVec3.t
-    let () = seal t
-  end
-
-  module CurvatureBounds = struct
-    type t = [ `CurvatureBounds ] structure
-
-    let t : t typ = structure "ManifoldCurvatureBounds"
-    let max_mean_curvature = field t "max_mean_curvature" float
-    let min_mean_curvature = field t "min_mean_curvature" float
-    let max_gaussian_curvature = field t "max_gaussian_curvature" float
-    let min_gaussian_curvature = field t "min_gaussian_curvature" float
-    let () = seal t
+    let t =
+      enum
+        "ClipperEndType"
+        [ Polygon, polygon_end
+        ; Joined, joined_end
+        ; Butt, butt_end
+        ; Square, square_end
+        ; Round, round_end
+        ]
+        ~unexpected:(fun _ -> assert false)
   end
 end
