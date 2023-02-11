@@ -15,6 +15,16 @@ module Functions (F : Ctypes.FOREIGN) = struct
       @-> ptr Paths64.t
       @-> returning (ptr Paths64.t) )
 
+  let paths64_boolean_op_tree =
+    foreign
+      "clipper_paths64_boolean_op_tree"
+      ( ClipType.t
+      @-> FillRule.t
+      @-> ptr Paths64.t
+      @-> ptr Paths64.t
+      @-> ptr PolyTree64.t
+      @-> returning void )
+
   let paths64_intersect =
     foreign
       "clipper_paths64_intersect"
@@ -61,6 +71,17 @@ module Functions (F : Ctypes.FOREIGN) = struct
       @-> ptr PathsD.t
       @-> int
       @-> returning (ptr PathsD.t) )
+
+  let pathsd_boolean_op_tree =
+    foreign
+      "clipper_pathsd_boolean_op_tree"
+      ( ClipType.t
+      @-> FillRule.t
+      @-> ptr PathsD.t
+      @-> ptr PathsD.t
+      @-> ptr PolyTreeD.t
+      @-> int
+      @-> returning void )
 
   let pathsd_intersect =
     foreign
@@ -180,12 +201,6 @@ module Functions (F : Ctypes.FOREIGN) = struct
   let path64 = foreign "clipper_path64" (ptr void @-> returning (ptr Path64.t))
   let pathd = foreign "clipper_pathd" (ptr void @-> returning (ptr PathD.t))
 
-  let path64_of_string =
-    foreign "clipper_path64_of_string" (ptr void @-> ptr char @-> returning (ptr Path64.t))
-
-  let pathd_of_string =
-    foreign "clipper_pathd_of_string" (ptr void @-> ptr char @-> returning (ptr PathD.t))
-
   let path64_of_points =
     foreign
       "clipper_path64_of_points"
@@ -236,6 +251,12 @@ module Functions (F : Ctypes.FOREIGN) = struct
   let path64_length = foreign "clipper_path64_length" (ptr Path64.t @-> returning size_t)
   let pathd_length = foreign "clipper_pathd_length" (ptr PathD.t @-> returning size_t)
 
+  let path64_get_point =
+    foreign "clipper_path64_get_point" (ptr Path64.t @-> int @-> returning Point64.t)
+
+  let pathd_get_point =
+    foreign "clipper_pathd_get_point" (ptr PathD.t @-> int @-> returning PointD.t)
+
   let path64_to_points =
     foreign
       "clipper_path64_to_points"
@@ -259,15 +280,31 @@ module Functions (F : Ctypes.FOREIGN) = struct
   let pathsd_lengths =
     foreign "clipper_pathsd_lengths" (ptr void @-> ptr PathsD.t @-> returning (ptr size_t))
 
-  let paths64_get =
+  let paths64_path_length =
+    foreign "clipper_paths64_path_length" (ptr Paths64.t @-> int @-> returning size_t)
+
+  let pathsd_path_length =
+    foreign "clipper_pathsd_path_length" (ptr PathsD.t @-> int @-> returning size_t)
+
+  let paths64_get_path =
     foreign
-      "clipper_paths64_get"
+      "clipper_paths64_get_path"
       (ptr void @-> ptr Paths64.t @-> int @-> returning (ptr Path64.t))
 
-  let pathsd_get =
+  let pathsd_get_path =
     foreign
-      "clipper_pathsd_get"
+      "clipper_pathsd_get_path"
       (ptr void @-> ptr PathsD.t @-> int @-> returning (ptr PathD.t))
+
+  let paths64_get_point =
+    foreign
+      "clipper_paths64_get_point"
+      (ptr Paths64.t @-> int @-> int @-> returning Point64.t)
+
+  let pathsd_get_point =
+    foreign
+      "clipper_pathsd_get_point"
+      (ptr PathsD.t @-> int @-> int @-> returning PointD.t)
 
   let paths64_to_points =
     foreign
@@ -310,6 +347,66 @@ module Functions (F : Ctypes.FOREIGN) = struct
     foreign
       "clipper_pathd_trim_collinear"
       (ptr void @-> ptr PathD.t @-> bool @-> int @-> returning (ptr PathD.t))
+
+  let pathd_strip_near_equal =
+    foreign
+      "clipper_pathd_strip_near_equal"
+      (ptr void @-> ptr PathD.t @-> double @-> bool @-> returning (ptr PathD.t))
+
+  let path64_strip_near_equal =
+    foreign
+      "clipper_path64_strip_near_equal"
+      (ptr void @-> ptr Path64.t @-> double @-> bool @-> returning (ptr Path64.t))
+
+  let pathsd_strip_near_equal =
+    foreign
+      "clipper_pathsd_strip_near_equal"
+      (ptr void @-> ptr PathsD.t @-> double @-> bool @-> returning (ptr PathsD.t))
+
+  let paths64_strip_near_equal =
+    foreign
+      "clipper_paths64_strip_near_equal"
+      (ptr void @-> ptr Paths64.t @-> double @-> bool @-> returning (ptr Paths64.t))
+
+  let pathd_strip_duplicates =
+    foreign
+      "clipper_pathd_strip_duplicates"
+      (ptr void @-> ptr PathD.t @-> bool @-> returning (ptr PathD.t))
+
+  let path64_strip_duplicates =
+    foreign
+      "clipper_path64_strip_duplicates"
+      (ptr void @-> ptr Path64.t @-> bool @-> returning (ptr Path64.t))
+
+  let pathsd_strip_duplicates =
+    foreign
+      "clipper_pathsd_strip_duplicates"
+      (ptr void @-> ptr PathsD.t @-> bool @-> returning (ptr PathsD.t))
+
+  let paths64_strip_duplicates =
+    foreign
+      "clipper_paths64_strip_duplicates"
+      (ptr void @-> ptr Paths64.t @-> bool @-> returning (ptr Paths64.t))
+
+  let path64_simplify =
+    foreign
+      "clipper_path64_simplify"
+      (ptr void @-> ptr Path64.t @-> double @-> bool @-> returning (ptr Path64.t))
+
+  let pathd_simplify =
+    foreign
+      "clipper_pathd_simplify"
+      (ptr void @-> ptr PathD.t @-> double @-> bool @-> returning (ptr PathD.t))
+
+  let paths64_simplify =
+    foreign
+      "clipper_paths64_simplify"
+      (ptr void @-> ptr Paths64.t @-> double @-> bool @-> returning (ptr Paths64.t))
+
+  let pathsd_simplify =
+    foreign
+      "clipper_pathsd_simplify"
+      (ptr void @-> ptr PathsD.t @-> double @-> bool @-> returning (ptr PathsD.t))
 
   let path64_ramer_douglas_peucker =
     foreign
@@ -381,6 +478,27 @@ module Functions (F : Ctypes.FOREIGN) = struct
       "clipper_pointd_near_collinear"
       (PointD.t @-> PointD.t @-> PointD.t @-> double @-> returning bool)
 
+  let point64_in_path =
+    foreign
+      "clipper_point_in_path64"
+      (ptr Path64.t @-> Point64.t @-> returning PointInPolygon.t)
+
+  let pointd_in_path =
+    foreign
+      "clipper_point_in_pathd"
+      (ptr PathD.t @-> PointD.t @-> returning PointInPolygon.t)
+
+  let path64_area = foreign "clipper_path64_area" (ptr Path64.t @-> returning double)
+  let pathd_area = foreign "clipper_pathd_area" (ptr PathD.t @-> returning double)
+  let paths64_area = foreign "clipper_paths64_area" (ptr Paths64.t @-> returning double)
+  let pathsd_area = foreign "clipper_pathsd_area" (ptr PathsD.t @-> returning double)
+
+  let pathd_is_positive =
+    foreign "clipper_pathd_is_positive" (ptr PathD.t @-> returning bool)
+
+  let path64_is_positive =
+    foreign "clipper_path64_is_positive" (ptr Path64.t @-> returning bool)
+
   (* Class Interfaces *)
 
   (* PolyTree Constructors *)
@@ -397,9 +515,12 @@ module Functions (F : Ctypes.FOREIGN) = struct
 
   (* PolyTree64 Methods *)
 
-  let polytree64_get =
+  let polytree64_parent =
+    foreign "clipper_polytree64_parent" (ptr PolyTree64.t @-> returning (ptr PolyTree64.t))
+
+  let polytree64_get_child =
     foreign
-      "clipper_polytree64_get"
+      "clipper_polytree64_get_child"
       (ptr PolyTree64.t @-> size_t @-> returning (ptr PolyTree64.t))
 
   let polytree64_add_child =
@@ -412,6 +533,12 @@ module Functions (F : Ctypes.FOREIGN) = struct
 
   let polytree64_count =
     foreign "clipper_polytree64_count" (ptr PolyTree64.t @-> returning size_t)
+
+  let polytree64_level =
+    foreign "clipper_polytree64_level" (ptr PolyTree64.t @-> returning int)
+
+  let polytree64_is_hole =
+    foreign "clipper_polytree64_is_hole" (ptr PolyTree64.t @-> returning int)
 
   let polytree64_polygon =
     foreign
@@ -433,9 +560,12 @@ module Functions (F : Ctypes.FOREIGN) = struct
 
   (* PolyTreeD Methods *)
 
-  let polytreed_get =
+  let polytreed_parent =
+    foreign "clipper_polytreed_parent" (ptr PolyTreeD.t @-> returning (ptr PolyTreeD.t))
+
+  let polytreed_get_child =
     foreign
-      "clipper_polytreed_get"
+      "clipper_polytreed_get_child"
       (ptr PolyTreeD.t @-> size_t @-> returning (ptr PolyTreeD.t))
 
   let polytreed_add_child =
@@ -448,6 +578,12 @@ module Functions (F : Ctypes.FOREIGN) = struct
 
   let polytreed_count =
     foreign "clipper_polytreed_count" (ptr PolyTreeD.t @-> returning size_t)
+
+  let polytreed_level =
+    foreign "clipper_polytreed_level" (ptr PolyTreeD.t @-> returning int)
+
+  let polytreed_is_hole =
+    foreign "clipper_polytreed_is_hole" (ptr PolyTreeD.t @-> returning int)
 
   let polytreed_polygon =
     foreign
@@ -677,6 +813,82 @@ module Functions (F : Ctypes.FOREIGN) = struct
       @-> ptr PathsD.t
       @-> returning bool )
 
+  (* Offset Contsructors *)
+
+  let offset =
+    foreign
+      "clipper_clipperoffset"
+      (ptr void @-> double @-> double @-> bool @-> bool @-> returning (ptr Offset.t))
+
+  (* Offset Setters / Getters *)
+
+  let offset_set_miter_limit =
+    foreign
+      "clipper_clipperoffset_set_miter_limit"
+      (ptr Offset.t @-> double @-> returning void)
+
+  let offset_set_arc_tolerance =
+    foreign
+      "clipper_clipperoffset_set_arc_tolerance"
+      (ptr Offset.t @-> double @-> returning void)
+
+  let offset_set_preserve_collinear =
+    foreign
+      "clipper_clipperoffset_set_preserve_collinear"
+      (ptr Offset.t @-> bool @-> returning void)
+
+  let offset_set_reverse_solution =
+    foreign
+      "clipper_clipperoffset_set_reverse_solution"
+      (ptr Offset.t @-> bool @-> returning void)
+
+  let offset_get_miter_limit =
+    foreign "clipper_clipperoffset_get_miter_limit" (ptr Offset.t @-> returning double)
+
+  let offset_get_arc_tolerance =
+    foreign "clipper_clipperoffset_get_arc_tolerance" (ptr Offset.t @-> returning double)
+
+  let offset_get_preserve_collinear =
+    foreign
+      "clipper_clipperoffset_get_preserve_collinear"
+      (ptr Offset.t @-> returning bool)
+
+  let offset_get_reverse_solution =
+    foreign "clipper_clipperoffset_get_reverse_solution" (ptr Offset.t @-> returning bool)
+
+  let offset_error_code =
+    foreign "clipper_clipperoffset_error_code" (ptr Offset.t @-> returning int)
+
+  let offset_clear =
+    foreign "clipper_clipperoffset_clear" (ptr Offset.t @-> returning void)
+
+  (* Offset Methods *)
+
+  let offset_add_pathd =
+    foreign
+      "clipper_clipperoffset_add_pathd"
+      (ptr Offset.t @-> ptr PathD.t @-> JoinType.t @-> EndType.t @-> returning void)
+
+  let offset_add_pathsd =
+    foreign
+      "clipper_clipperoffset_add_pathsd"
+      (ptr Offset.t @-> ptr PathsD.t @-> JoinType.t @-> EndType.t @-> returning void)
+
+  let offset_add_path64 =
+    foreign
+      "clipper_clipperoffset_add_path64"
+      (ptr Offset.t @-> ptr Path64.t @-> JoinType.t @-> EndType.t @-> returning void)
+
+  let offset_add_paths64 =
+    foreign
+      "clipper_clipperoffset_add_paths64"
+      (ptr Offset.t @-> ptr Paths64.t @-> JoinType.t @-> EndType.t @-> returning void)
+
+  let offset_execute =
+    foreign
+      "clipper_clipperoffset_execute"
+      (ptr void @-> ptr Offset.t @-> double @-> returning (ptr Paths64.t))
+
   (* memory size *)
 
   let path64_size = foreign "clipper_path64_size" (void @-> returning size_t)
@@ -685,17 +897,11 @@ module Functions (F : Ctypes.FOREIGN) = struct
   let pathsd_size = foreign "clipper_pathsd_size" (void @-> returning size_t)
   let rect64_size = foreign "clipper_rect64_size" (void @-> returning size_t)
   let rectd_size = foreign "clipper_rectd_size" (void @-> returning size_t)
-
-  let polytree64_size =
-    foreign "clipper_polytree64_size" (ptr PolyTree64.t @-> returning size_t)
-
-  let polytreed_size =
-    foreign "clipper_polytreed_size" (ptr PolyTreeD.t @-> returning size_t)
-
-  let clipper64_size =
-    foreign "clipper_clipper64_size" (ptr Clipper64.t @-> returning size_t)
-
-  let clipperd_size = foreign "clipper_clipperd_size" (ptr ClipperD.t @-> returning size_t)
+  let polytree64_size = foreign "clipper_polytree64_size" (void @-> returning size_t)
+  let polytreed_size = foreign "clipper_polytreed_size" (void @-> returning size_t)
+  let clipper64_size = foreign "clipper_clipper64_size" (void @-> returning size_t)
+  let clipperd_size = foreign "clipper_clipperd_size" (void @-> returning size_t)
+  let offset_size = foreign "clipper_clipperoffset_size" (void @-> returning size_t)
 
   (* destruction *)
 
@@ -721,6 +927,9 @@ module Functions (F : Ctypes.FOREIGN) = struct
   let destruct_clipperd =
     foreign "clipper_destruct_clipperd" (ptr ClipperD.t @-> returning void)
 
+  let destruct_offset =
+    foreign "clipper_destruct_clipperoffset" (ptr Offset.t @-> returning void)
+
   (* pointer free + destruction *)
 
   let delete_path64 = foreign "clipper_delete_path64" (ptr Path64.t @-> returning void)
@@ -741,4 +950,7 @@ module Functions (F : Ctypes.FOREIGN) = struct
 
   let delete_clipperd =
     foreign "clipper_delete_clipperd" (ptr ClipperD.t @-> returning void)
+
+  let delete_clipperoffset =
+    foreign "clipper_delete_clipperoffset" (ptr Offset.t @-> returning void)
 end

@@ -3,7 +3,7 @@ type t = C.Types.JoinType.t =
   | Round
   | Miter
 
-let to_string = function
-  | Square -> "SQUARE_JOIN"
-  | Round -> "ROUND_JOIN"
-  | Miter -> "MITER_JOIN"
+let make = function
+  | `Square -> Square
+  | `Round -> Round
+  | `Miter -> Miter

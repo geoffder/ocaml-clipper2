@@ -4,8 +4,8 @@ type t = C.Types.FillRule.t =
   | Positive
   | Negative
 
-let to_string = function
-  | EvenOdd -> "EVEN_ODD"
-  | NonZero -> "NON_ZERO"
-  | Positive -> "POSITIVE"
-  | Negative -> "NEGATIVE"
+let make = function
+  | `EvenOdd -> EvenOdd
+  | `NonZero -> NonZero
+  | `Positive -> Positive
+  | `Negative -> Negative

@@ -5,9 +5,9 @@ type t = C.Types.EndType.t =
   | Square
   | Round
 
-let to_string = function
-  | Polygon -> "POLYGON_END"
-  | Joined -> "JOINED_END"
-  | Butt -> "BUTT_END"
-  | Square -> "SQUARE_END"
-  | Round -> "ROUND_END"
+let make = function
+  | `Polygon -> Polygon
+  | `Joined -> Joined
+  | `Butt -> Butt
+  | `Square -> Square
+  | `Round -> Round

@@ -6,4 +6,5 @@ let make x y =
   Ctypes.setf pt C.Types.Point64.y y;
   pt
 
-let to_tup t = Ctypes.getf t C.Types.Point64.x, Ctypes.getf t C.Types.Point64.y
+let[@inline] x t = Ctypes.getf t C.Types.Point64.x
+let[@inline] y t = Ctypes.getf t C.Types.Point64.y

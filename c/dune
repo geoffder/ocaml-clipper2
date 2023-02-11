@@ -36,7 +36,8 @@
  (action
   (no-infer
    (progn
-    (ignore-outputs
+    (with-outputs-to
+     cmake_shared.log
      (chdir
       vendor/Clipper2c/build_so
       (progn
@@ -56,7 +57,8 @@
  (action
   (no-infer
    (progn
-    (ignore-outputs
+    (with-outputs-to
+     cmake_static.log
      (chdir
       vendor/Clipper2c/build_a
       (progn

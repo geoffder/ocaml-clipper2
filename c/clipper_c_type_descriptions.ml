@@ -14,6 +14,12 @@ module Types (F : Cstubs.Types.TYPE) = struct
     let t : t typ = structure "ClipperClipperD"
   end
 
+  module Offset = struct
+    type t = [ `Offset ] structure
+
+    let t : t typ = structure "ClipperClipperOffset"
+  end
+
   module Path64 = struct
     type t = [ `Path64 ] structure
 
@@ -187,6 +193,23 @@ module Types (F : Cstubs.Types.TYPE) = struct
         ; Square, square_end
         ; Round, round_end
         ]
+        ~unexpected:(fun _ -> assert false)
+  end
+
+  module PointInPolygon = struct
+    let is_on = constant "IS_ON" int64_t
+    let is_inside = constant "IS_INSIDE" int64_t
+    let is_outside = constant "IS_OUTSIDE" int64_t
+
+    type t =
+      | IsOn
+      | IsInside
+      | IsOutside
+
+    let t =
+      enum
+        "ClipperPointInPolygonResult"
+        [ IsOn, is_on; IsInside, is_inside; IsOutside, is_outside ]
         ~unexpected:(fun _ -> assert false)
   end
 end

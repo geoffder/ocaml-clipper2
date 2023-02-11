@@ -5,9 +5,9 @@ type t = C.Types.ClipType.t =
   | Difference
   | Xor
 
-let to_string = function
-  | None -> "NONE"
-  | Intersection -> "INTERSECTION"
-  | Union -> "UNION"
-  | Difference -> "DIFFERENCE"
-  | Xor -> "XOR"
+let make = function
+  | `None -> None
+  | `Intersection -> Intersection
+  | `Union -> Union
+  | `Difference -> Difference
+  | `Xor -> Xor
