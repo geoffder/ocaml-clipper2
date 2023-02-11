@@ -32,23 +32,23 @@ module MakeD' (V : VD) (P : Poly with type v := V.t) (Conf : Config) = struct
   module Path = struct
     include PathD
 
-    let add_point t v = C.Funcs.pathd_add_point t (Point.of_v v)
+    let[@inline] get_point t i = Point.to_v @@ C.Funcs.pathd_get_point t i
+    let[@inline] add_point t v = C.Funcs.pathd_add_point t (Point.of_v v)
 
     let of_list vs =
       let t = make () in
       List.iter (add_point t) vs;
       t
 
-    let to_list t =
-      List.init (length t) (fun i -> Point.to_v @@ C.Funcs.pathd_get_point t i)
+    let to_list t = List.init (length t) (get_point t)
 
-    let ellipse ?(fn = 0) ?centre rx ry =
+    let ellipse ?(fn = 0) ?centre rad =
       let centre =
         match centre with
         | Some c -> Point.of_v c
         | None -> Point.make 0. 0.
       and buf, t = alloc () in
-      let _ = C.Funcs.pathd_ellipse buf centre rx ry fn in
+      let _ = C.Funcs.pathd_ellipse buf centre (V.x rad) (V.y rad) fn in
       t
 
     let translate v t =
@@ -198,8 +198,6 @@ module MakeD' (V : VD) (P : Poly with type v := V.t) (Conf : Config) = struct
       let polys = PolyTreeD.decompose Path.to_list tree in
       List.map P.of_list polys
   end
-
-  module PolyTree = PolyTreeD
 end
 
 module MakeD (V : VD) =
@@ -230,6 +228,7 @@ module Make64' (V : V64) (P : Poly with type v := V.t) (Conf : Config) = struct
   module Path = struct
     include Path64
 
+    let get_point t i = Point.to_v @@ C.Funcs.path64_get_point t i
     let add_point t v = C.Funcs.path64_add_point t (Point.of_v v)
 
     let of_list ps =
@@ -240,12 +239,14 @@ module Make64' (V : V64) (P : Poly with type v := V.t) (Conf : Config) = struct
     let to_list t =
       List.init (length t) (fun i -> Point.to_v @@ C.Funcs.path64_get_point t i)
 
-    let ellipse ?(fn = 0) ?centre rx ry =
+    let ellipse ?(fn = 0) ?centre rad =
       let centre =
         match centre with
         | Some c -> Point.of_v c
         | None -> Point.make (Int64.of_int 0) (Int64.of_int 0)
-      and buf, t = alloc () in
+      and buf, t = alloc ()
+      and rx = Int64.to_float @@ V.x rad
+      and ry = Int64.to_float @@ V.y rad in
       let _ = C.Funcs.path64_ellipse buf centre rx ry fn in
       t
 
