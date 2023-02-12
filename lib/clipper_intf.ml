@@ -106,22 +106,39 @@ module type Path = sig
 
   (** [ramer_douglas_peucker ?eps t]
 
-       *)
+       Applies the
+       {{:https://en.wikipedia.org/wiki/Ramer%E2%80%93Douglas%E2%80%93Peucker_algorithm}
+       Ramer-Douglas-Peucker algorithm} to remove extraneous vertices from the
+       path [t]. Put simply, vertices will be removed if they are less than
+       [eps] distance from imaginary lines passing through their adjacent vertices.
+
+       This function is particularly useful following offsetting (ie
+       inflating/shrinking paths). Offsetting often creates tiny segments that don't
+       improve path quality. Further these tiny segments create angles that are
+       strongly influenced by integer rounding. While these tiny segments are too
+       small to be noticeable following a single offset procedure, they're likely to
+       degrade the quality of subsequent offsets. And they'll also degrade
+       performance. Because of this, it is strongly recommended calling this function
+       after every polygon offset. *)
   val ramer_douglas_peucker : ?eps:float -> t -> t
 
   (** [strip_near_equal ?closed ?eps t]
 
-       *)
+       Remove adjacent points that are less than [eps] distance apart from
+       their neighbour from the paths [t]. The path is treated as [closed] by
+       default. *)
   val strip_near_equal : ?closed:bool -> ?eps:float -> t -> t
 
   (** [strip_duplicates ?closed ?eps t]
 
-       *)
+       Remove adjacent points that duplicate of their neighbours from the
+       paths [t]. The path is treated as [closed] by default. *)
   val strip_duplicates : ?closed:bool -> t -> t
 
   (** [point_inside t p]
 
-       *)
+       Determine whether the point [p] is inside, outside, or on the border of
+       [t]. *)
   val point_inside : t -> v -> [> `Inside | `OnBorder | `Outside ]
 
   (** [area t]
@@ -184,17 +201,33 @@ module type Paths = sig
 
   (** [ramer_douglas_peucker ?eps t]
 
-       *)
+       Applies the
+       {{:https://en.wikipedia.org/wiki/Ramer%E2%80%93Douglas%E2%80%93Peucker_algorithm}
+       Ramer-Douglas-Peucker algorithm} to remove extraneous vertices from the
+       path [t]. Put simply, vertices will be removed if they are less than
+       [eps] distance from imaginary lines passing through their adjacent vertices.
+
+       This function is particularly useful following offsetting (ie
+       inflating/shrinking paths). Offsetting often creates tiny segments that don't
+       improve path quality. Further these tiny segments create angles that are
+       strongly influenced by integer rounding. While these tiny segments are too
+       small to be noticeable following a single offset procedure, they're likely to
+       degrade the quality of subsequent offsets. And they'll also degrade
+       performance. Because of this, it is strongly recommended calling this function
+       after every polygon offset. *)
   val ramer_douglas_peucker : ?eps:float -> t -> t
 
   (** [strip_near_equal ?closed ?eps t]
 
-       *)
+       Remove adjacent points that are less than [eps] distance apart from
+       their neighbour from the paths [t]. The path is treated as [closed] by
+       default. *)
   val strip_near_equal : ?closed:bool -> ?eps:float -> t -> t
 
   (** [strip_duplicates ?closed ?eps t]
 
-       *)
+       Remove adjacent points that duplicate of their neighbours from the
+       paths [t]. The path is treated as [closed] by default. *)
   val strip_duplicates : ?closed:bool -> t -> t
 
   (** [area t]
@@ -212,6 +245,11 @@ module type SD = sig
   module Path : sig
     include Path with type v := v
 
+    (** [trim_collinear ?closed ?precision t]
+
+          Remove collinear points (that fall on a line drawn between their
+          neighbours) from the path [t]. The path is treated as [closed] by
+          default. *)
     val trim_collinear : ?closed:bool -> ?precision:int -> t -> t
   end
 
@@ -253,6 +291,11 @@ module type S64 = sig
   module Path : sig
     include Path with type v := v
 
+    (** [trim_collinear ?closed t]
+
+          Remove collinear points (that fall on a line drawn between their
+          neighbours) from the path [t]. The path is treated as [closed] by
+          default. *)
     val trim_collinear : ?closed:bool -> t -> t
   end
 
