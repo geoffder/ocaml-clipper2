@@ -1,0 +1,38 @@
+name: Deploy odoc
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-test-and-deploy-doc:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Use OCaml 4.14.x
+        uses: ocaml/setup-ocaml@v2
+        with:
+          ocaml-compiler: 4.14.x
+
+      - name: Setup cmake
+        uses: jwlawson/actions-setup-cmake@v1.13
+
+      - name: Install dependencies
+        run: |
+          opam install . --deps-only --with-doc
+
+      - name: Pull in submodules (clipper2c and dependencies)
+        run: git submodule update --init --recursive
+
+      - name: Build docs
+        run: |
+          opam exec -- dune build @doc
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ github.token }}
+          publish_dir: _build/default/_doc/_html

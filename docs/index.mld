@@ -28,7 +28,22 @@ The [D] variants take a 2d float vector type in {{!Clipper.VD} [VD]}, and create
 bindings to the decimal interface of Clipper2, while the [64] variants do the
 same but for the int64 interface.
 
-- {{!Clipper.MakeD'} [MakeD']}
-- {{!Clipper.MakeD} [MakeD]}
-- {{!Clipper.Make64'} [Make64']}
-- {{!Clipper.Make64} [Make64]}
+- {{!Clipper.MakeD} [MakeD]} -- [float] interface to Clipper2
+- {{!Clipper.MakeD'} [MakeD']} -- same, but additionally taking {{!Clipper.Poly} [Poly]}
+- {{!Clipper.Make64} [Make64]} -- [int64] interface to Clipper2
+- {{!Clipper.Make64'} [Make64']} -- same, but additionally taking {{!Clipper.Poly} [Poly]}
+
+{1:example Example}
+
+{[
+  module C = Clipper.MakeD (struct
+      type t = float * float
+      let v x y = x, y
+      let x t = fst t
+      let y t = snd t
+    end)
+  let ex =
+    let a = [ 0., 0.; 10., 0.; 10., 10.; 0., 10. ] in
+    let b = List.map (fun (x, y) -> x +. 5., y +. 5.) a in
+    C.Paths.(to_list @@ difference (of_list [ a ]) (of_list [ b ]))
+]}
