@@ -1,6 +1,3 @@
-# ocaml-clipper2
-OCaml bindings to the polygon clipping and offseting library Clipper2
-
 # Clipper
 
 OCaml bindings to the polygon clipping and offseting library [Clipper2](http://www.angusj.com/clipper2/Docs/Overview.htm)
