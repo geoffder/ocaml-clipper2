@@ -4,6 +4,8 @@ module C =
     (struct
       type t = OCADml.Poly2.t
 
+      let to_list t = t.OCADml.Poly2.outer :: t.holes
+
       let of_list = function
         | [] -> OCADml.Poly2.make []
         | outer :: holes -> OCADml.Poly2.make ~holes outer

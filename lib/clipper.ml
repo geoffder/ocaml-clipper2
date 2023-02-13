@@ -10,6 +10,9 @@ let config ?fill_rule ?join_type ?end_type ?precision ?eps () =
   end : Config )
 
 module MakeD' (V : VD) (P : Poly with type v := V.t) (Conf : Config) = struct
+  type path = C.Types.PathD.t Ctypes_static.ptr
+  type paths = C.Types.PathsD.t Ctypes_static.ptr
+
   include ConfigTypes
 
   let fill_rule = Option.value ~default:`NonZero Conf.fill_rule
@@ -76,7 +79,7 @@ module MakeD' (V : VD) (P : Poly with type v := V.t) (Conf : Config) = struct
       let _ = C.Funcs.pathd_strip_duplicates buf t closed in
       stripped
 
-    let trim_collinear ?(closed = true) ?(precision = precision) t =
+    let trim_collinear ?(closed = true) t =
       let buf, trimmed = alloc () in
       let _ = C.Funcs.pathd_trim_collinear buf t (not closed) precision in
       trimmed
@@ -111,60 +114,51 @@ module MakeD' (V : VD) (P : Poly with type v := V.t) (Conf : Config) = struct
       let _ = C.Funcs.pathsd_translate buf t (V.x v) (V.y v) in
       translated
 
-    let boolean_op ?(fill_rule = fill_rule) ?(precision = precision) ~op subjects clips =
+    let boolean_op ?(fill_rule = fill_rule) ~op subjects clips =
       let buf, t = alloc ()
       and op = ClipType.make op
       and fill_rule = FillRule.make fill_rule in
       let _ = C.Funcs.pathsd_boolean_op buf op fill_rule subjects clips precision in
       t
 
-    let boolean_op_tree
-        ?(fill_rule = fill_rule)
-        ?(precision = precision)
-        ~op
-        subjects
-        clips
-      =
+    let boolean_op_tree ?(fill_rule = fill_rule) ~op subjects clips =
       let tree = PolyTreeD.make ()
       and op = ClipType.make op
       and fill_rule = FillRule.make fill_rule in
       let _ = C.Funcs.pathsd_boolean_op_tree op fill_rule subjects clips tree precision in
       tree
 
-    let intersect ?(fill_rule = fill_rule) ?(precision = precision) subjects clips =
+    let intersect ?(fill_rule = fill_rule) subjects clips =
       let buf, t = alloc ()
       and fill_rule = FillRule.make fill_rule in
       let _ = C.Funcs.pathsd_intersect buf subjects clips fill_rule precision in
       t
 
-    let union ?(fill_rule = fill_rule) ?(precision = precision) subjects =
+    let add ?(fill_rule = fill_rule) subjects clips =
       let buf, t = alloc ()
       and fill_rule = FillRule.make fill_rule in
-      let _ = C.Funcs.pathsd_union buf subjects (make ()) fill_rule precision in
+      let _ = C.Funcs.pathsd_union buf subjects clips fill_rule precision in
       t
 
-    let difference ?(fill_rule = fill_rule) ?(precision = precision) subjects clips =
+    let[@inline] union ?fill_rule subjects = add ?fill_rule subjects (make ())
+
+    let difference ?(fill_rule = fill_rule) subjects clips =
       let buf, t = alloc ()
       and fill_rule = FillRule.make fill_rule in
       let _ = C.Funcs.pathsd_difference buf subjects clips fill_rule precision in
       t
 
-    let xor ?(fill_rule = fill_rule) ?(precision = precision) subjects clips =
+    let[@inline] sub ?fill_rule subjects clips = difference ?fill_rule subjects clips
+
+    let xor ?(fill_rule = fill_rule) subjects clips =
       let buf, t = alloc ()
       and fill_rule = FillRule.make fill_rule in
       let _ = C.Funcs.pathsd_xor buf subjects clips fill_rule precision in
       t
 
-    let inflate
-        ?(join_type = join_type)
-        ?(end_type = end_type)
-        ?(miter_limit = 2.0)
-        ?(precision = 2)
-        ~delta
-        t
-      =
+    let inflate ?(join_type = join_type) ?(end_type = end_type) ~delta t =
       let buf, inflated = alloc ()
-      and join_type = JoinType.make join_type
+      and join_type, miter_limit = JoinType.make join_type
       and end_type = EndType.make end_type in
       let _ =
         C.Funcs.pathsd_inflate buf t delta join_type end_type miter_limit precision
@@ -192,9 +186,13 @@ module MakeD' (V : VD) (P : Poly with type v := V.t) (Conf : Config) = struct
       rdp
 
     let area t = C.Funcs.pathsd_area t
+    let[@inline] of_poly p = of_list @@ P.to_list p
 
-    let to_polys ?(fill_rule = fill_rule) ?precision t =
-      let tree = boolean_op_tree ~fill_rule ?precision ~op:`Union t (make ()) in
+    let[@inline] of_polys ps =
+      of_list @@ List.fold_left (fun acc p -> List.rev_append (P.to_list p) acc) [] ps
+
+    let to_polys ?(fill_rule = fill_rule) t =
+      let tree = boolean_op_tree ~fill_rule ~op:`Union t (make ()) in
       let polys = PolyTreeD.decompose Path.to_list tree in
       List.map P.of_list polys
   end
@@ -206,11 +204,15 @@ module MakeD (V : VD) =
     (struct
       type t = V.t list list
 
+      let to_list = Fun.id
       let of_list = Fun.id
     end)
     ((val config ()))
 
 module Make64' (V : V64) (P : Poly with type v := V.t) (Conf : Config) = struct
+  type path = C.Types.Path64.t Ctypes_static.ptr
+  type paths = C.Types.Paths64.t Ctypes_static.ptr
+
   include ConfigTypes
 
   let fill_rule = Option.value ~default:`NonZero Conf.fill_rule
@@ -330,11 +332,13 @@ module Make64' (V : V64) (P : Poly with type v := V.t) (Conf : Config) = struct
       let _ = C.Funcs.paths64_intersect buf subjects clips fill_rule in
       t
 
-    let union ?(fill_rule = fill_rule) subjects =
+    let add ?(fill_rule = fill_rule) subjects clips =
       let buf, t = alloc ()
       and fill_rule = FillRule.make fill_rule in
-      let _ = C.Funcs.paths64_union buf subjects (make ()) fill_rule in
+      let _ = C.Funcs.paths64_union buf subjects clips fill_rule in
       t
+
+    let[@inline] union ?fill_rule subjects = add ?fill_rule subjects (make ())
 
     let difference ?(fill_rule = fill_rule) subjects clips =
       let buf, t = alloc ()
@@ -342,21 +346,17 @@ module Make64' (V : V64) (P : Poly with type v := V.t) (Conf : Config) = struct
       let _ = C.Funcs.paths64_difference buf subjects clips fill_rule in
       t
 
+    let[@inline] sub ?fill_rule subjects clips = difference ?fill_rule subjects clips
+
     let xor ?(fill_rule = fill_rule) subjects clips =
       let buf, t = alloc ()
       and fill_rule = FillRule.make fill_rule in
       let _ = C.Funcs.paths64_xor buf subjects clips fill_rule in
       t
 
-    let inflate
-        ?(join_type = join_type)
-        ?(end_type = end_type)
-        ?(miter_limit = 2.0)
-        ~delta
-        t
-      =
+    let inflate ?(join_type = join_type) ?(end_type = end_type) ~delta t =
       let buf, inflated = alloc ()
-      and join_type = JoinType.make join_type
+      and join_type, miter_limit = JoinType.make join_type
       and end_type = EndType.make end_type in
       let _ = C.Funcs.paths64_inflate buf t delta join_type end_type miter_limit in
       inflated
@@ -382,6 +382,10 @@ module Make64' (V : V64) (P : Poly with type v := V.t) (Conf : Config) = struct
       rdp
 
     let area t = C.Funcs.paths64_area t
+    let[@inline] of_poly p = of_list @@ P.to_list p
+
+    let[@inline] of_polys ps =
+      of_list @@ List.fold_left (fun acc p -> List.rev_append (P.to_list p) acc) [] ps
 
     let to_polys ?(fill_rule = fill_rule) t =
       let tree = boolean_op_tree ~fill_rule ~op:`Union t (make ()) in
@@ -396,6 +400,7 @@ module Make64 (V : V64) =
     (struct
       type t = V.t list list
 
+      let to_list = Fun.id
       let of_list = Fun.id
     end)
     ((val config ()))
