@@ -112,6 +112,8 @@ module ConfigTypes = struct
 end
 
 module type Config = sig
+  (** Configuration parameters allowing user control Clipper2 interface defaults *)
+
   val fill_rule : ConfigTypes.fill_rule option
   val join_type : ConfigTypes.join_type option
   val end_type : ConfigTypes.end_type option
@@ -326,50 +328,45 @@ module type S = sig
           closed). With the exception of [`Union], operations are performed {i
           between} [subjects] and [clips], not {i within} [subjects] ({i e.g.}
           paths in [subjects] are not differenced from eachother). *)
-    val boolean_op
-      :  ?fill_rule:ConfigTypes.fill_rule
-      -> op:ConfigTypes.clip_type
-      -> t
-      -> t
-      -> t
+    val boolean_op : ?fill_rule:fill_rule -> op:clip_type -> t -> t -> t
 
     (** [intersect ?fill_rule subjects clips]
 
           Intersect the polygons in [subjects] with the polygons in [clips]
           according to [fill_rule]. The result includes regions covered by both
           polygons in [subjects] and [clips]. *)
-    val intersect : ?fill_rule:ConfigTypes.fill_rule -> t -> t -> t
+    val intersect : ?fill_rule:fill_rule -> t -> t -> t
 
     (** [union ?fill_rule subjects]
 
           Union the polygons [subjects] according to [fill_rule]. The result
           includes the regions covered by any of the polygons contained in
           [subjects]. *)
-    val union : ?fill_rule:ConfigTypes.fill_rule -> t -> t
+    val union : ?fill_rule:fill_rule -> t -> t
 
     (** [add ?fill_rule a b]
 
           {!union} all of the polygons in [a] and [b]. *)
-    val add : ?fill_rule:ConfigTypes.fill_rule -> t -> t -> t
+    val add : ?fill_rule:fill_rule -> t -> t -> t
 
     (** [difference ?fill_rule subjects clips]
 
           Difference the polygons in [clips] from [subjects] according to
           [fill_rule]. The result includes the regions covered by the [subjects],
           but not the [clips] polygons. *)
-    val difference : ?fill_rule:ConfigTypes.fill_rule -> t -> t -> t
+    val difference : ?fill_rule:fill_rule -> t -> t -> t
 
     (** [sub a b]
 
            Difference the polygons in [b] from [a] (alias to {!difference}). *)
-    val sub : ?fill_rule:ConfigTypes.fill_rule -> t -> t -> t
+    val sub : ?fill_rule:fill_rule -> t -> t -> t
 
     (** [xor ?fill_rule subjects clips]
 
           Perform the exclusive-or boolean operation between the closed paths
           [subjects] and [clips] according to [fill_rule]. The result includes
           regions covered by the [subjects] or [clips] polygons, but not both. *)
-    val xor : ?fill_rule:ConfigTypes.fill_rule -> t -> t -> t
+    val xor : ?fill_rule:fill_rule -> t -> t -> t
 
     (** [inflate ?join_type ?end_type ~delta t]
 
@@ -388,12 +385,7 @@ module type S = sig
             of the inflated line.
           - {b Caution:} offsetting self-intersecting polygons may produce
             unexpected results. *)
-    val inflate
-      :  ?join_type:ConfigTypes.join_type
-      -> ?end_type:ConfigTypes.end_type
-      -> delta:float
-      -> t
-      -> t
+    val inflate : ?join_type:join_type -> ?end_type:end_type -> delta:float -> t -> t
 
     (** [of_poly p]
 
@@ -411,20 +403,27 @@ module type S = sig
           This involves a clipper union operation tracking the parent-child
           (outline-hole) relationships of the paths, thus [fill_rule] can be
           provided to override the default rule if desired. *)
-    val to_polys : ?fill_rule:ConfigTypes.fill_rule -> t -> poly list
+    val to_polys : ?fill_rule:fill_rule -> t -> poly list
   end
 end
 
 module type Intf = sig
+  (** {1 Functor Parameters }*)
+
   module type VD = VD
   module type V64 = V64
   module type Poly = Poly
+
+  (** {2 Configuration} *)
+
+  include module type of ConfigTypes
+
   module type Config = Config
 
   (** [config ?fill_rule ?join_type ?end_type ?precision ?eps ()]
 
 
-       Construct a {!module:Config} functor argument to set defaults
+       Construct a {!module-type:Config} functor argument to set defaults
        appropriate to your use case.
 
        - [fill_rule] sets the default filling rule used by the clipping
@@ -444,17 +443,21 @@ module type Intf = sig
          decimal interface ({i e.g.} [0.01] when [precision = 2]), or simply [1]
          for the [int64] interface. *)
   val config
-    :  ?fill_rule:ConfigTypes.fill_rule
-    -> ?join_type:ConfigTypes.join_type
-    -> ?end_type:ConfigTypes.end_type
+    :  ?fill_rule:fill_rule
+    -> ?join_type:join_type
+    -> ?end_type:end_type
     -> ?precision:int
     -> ?eps:float
     -> unit
     -> (module Config)
 
+  (** {1 Clipper Instance} *)
+
   (** The signature of Clipper2 binding modules produced by the provided [Make]
        functors *)
   module type S = S
+
+  (** {1 Functors} *)
 
   (** [MakeD' (V) (P) (C)] creates a Clipper2 module with the 2d [float] vector
        [V], the polygon type [P] (composed of [V.t]s, used for input/output), and a

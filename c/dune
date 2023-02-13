@@ -1,7 +1,7 @@
 (library
  (name clipper_c)
  (public_name clipper.c)
- (wrapped false)
+ (wrapped true)
  (libraries ctypes ctypes.foreign)
  (flags
   (:standard -w -9-16-27))

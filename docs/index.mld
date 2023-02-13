@@ -1,0 +1,34 @@
+{0 Clipper}
+
+Clipper provides OCaml bindings to the {{:http://www.angusj.com/clipper2/Docs/Overview.htm}
+Clipper2} polygon clipping (C++) library.
+
+{%html:
+  <p style="text-align:center;">
+  <img src="../assets/clipper2_australia.png" style="width:100mm;"/>
+  </p> %}
+
+{1:api API}
+
+- {!module-Clipper} -- top level library interface
+- {!module-Clipper_c} -- direct C bindings
+
+{2 Functor Parameters}
+
+- {{!Clipper.VD} [VD]} -- 2d float vector type
+- {{!Clipper.V64} [V64]} -- 2d int64 vector type
+- {{!Clipper.Poly} [Poly]} -- polygon (outer path and zero or more inner paths) type
+- {{!Clipper.Config} [Config]} -- user specifiable defaults (see:
+    {{!Clipper.config} [config]})
+
+{2 Functors}
+
+Each functor produces instances that adhere to the signature {{!Clipper.S} [S]}.
+The [D] variants take a 2d float vector type in {{!Clipper.VD} [VD]}, and create
+bindings to the decimal interface of Clipper2, while the [64] variants do the
+same but for the int64 interface.
+
+- {{!Clipper.MakeD'} [MakeD']}
+- {{!Clipper.MakeD} [MakeD]}
+- {{!Clipper.Make64'} [Make64']}
+- {{!Clipper.Make64} [Make64]}
