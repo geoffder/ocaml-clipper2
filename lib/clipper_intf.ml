@@ -1,31 +1,57 @@
 module type VD = sig
+  (** Signature of a 2d decimal ([float]) vector type to be used to represent
+    points for the construction and destruction of Clipper2 path types *)
+
+  (** 2d [float] vector type *)
   type t
 
+  (** [v x y] conststructs a vector from [x] and [y] coordinates *)
   val v : float -> float -> t
+
+  (** [x t] obtains the x coordinate of the vector [t] *)
   val x : t -> float
+
+  (** [y t] obtains the y coordinate of the vector [t] *)
   val y : t -> float
 end
 
 module type V64 = sig
+  (** Signature of a 2d [int64] vector type to be used to represent
+    points for the construction and destruction of Clipper2 path types *)
+
+  (** 2d [int64] vector type *)
   type t
 
+  (** [v x y] conststructs a vector from [x] and [y] coordinates *)
   val v : int64 -> int64 -> t
+
+  (** [x t] obtains the x coordinate of the vector [t] *)
   val x : t -> int64
+
+  (** [y t] obtains the y coordinate of the vector [t] *)
   val y : t -> int64
 end
 
 module type Poly = sig
+  (** Signature of a polygon type -- an outer path and zero or more inner paths
+    (holes). To be used for construction and destruction of Clipper2 paths
+    types. *)
+
+  (** 2d vector type representing points *)
   type v
+
+  (** polygon type *)
   type t
 
+  (** [to_list t] converts the polygon [t] to a list of lists of points *)
   val to_list : t -> v list list
+
+  (** [of_list vs] creates a polygon from the list of lists of points [vs] *)
   val of_list : v list list -> t
 end
 
 module ConfigTypes = struct
-  (** Boolean Operations
-
-       See Clipper2's docs for
+  (** Clipping types for boolean operations. See Clipper2's docs for
        {{:http://www.angusj.com/clipper2/Docs/Units/Clipper/Types/ClipType.htm}
        visual demonstrations}. *)
   type clip_type =
@@ -40,9 +66,8 @@ module ConfigTypes = struct
                  not both *)
     ]
 
-  (** Filling rule used by the clipping algorithm for boolean operations.
-
-       See Clipper2's docs for a detailed
+  (** Filling rules used by the clipping algorithm for boolean operations. See
+       Clipper2's docs for a detailed
        {{:http://www.angusj.com/clipper2/Docs/Units/Clipper/Types/FillRule.htm}
        explanation} of how they differ). *)
   type fill_rule =
@@ -52,11 +77,10 @@ module ConfigTypes = struct
     | `Negative (** only sub-regions with winding counts [< 0] are filled *)
     ]
 
-  (** Defines the treatment of corners when offsetting paths.
-
-      Visual examples are available in the Clipper2
-      {{:http://www.angusj.com/clipper2/Docs/Units/Clipper/Types/JoinType.htm}
-      docs}. *)
+  (** Defines the treatment of corners when offsetting paths. Visual examples
+       are available in the Clipper2
+       {{:http://www.angusj.com/clipper2/Docs/Units/Clipper/Types/JoinType.htm}
+       docs}. *)
   type join_type =
     [ `Square
       (** squaring applied uniformally at all joins where the {i internal}
@@ -75,9 +99,7 @@ module ConfigTypes = struct
     ]
 
   (** Sets whether paths are treated as closed ([`Polygon]) when offsetting or
-       open (and how to do so, if so).
-
-      Visual examples are available in the Clipper2
+       open (and how to do so, if so). Visual examples are available in the Clipper2
       {{:http://www.angusj.com/clipper2/Docs/Units/Clipper/Types/EndType.htm}
       docs}. *)
   type end_type =
@@ -98,15 +120,23 @@ module type Config = sig
 end
 
 module type S = sig
+  (** 2d vector type representing points *)
   type v
+
+  (** polygon type -- outer path and zero or more inner paths (holes) *)
   type poly
+
+  (** The Clipper2 Path type (std::vector of point) *)
   type path
+
+  (** The Clipper2 Paths type (std::vector of path) *)
   type paths
 
   include module type of ConfigTypes
 
   module Path : sig
-    (** The Clipper2 path type (std::vector of points) *)
+    (** The Clipper2 path type (std::vector of point) *)
+
     type t = path
 
     (** [length t]
@@ -204,7 +234,12 @@ module type S = sig
   end
 
   module Paths : sig
-    (** The Clipper2 paths type (std::vector of path) *)
+    (** The Clipper2 paths type (std::vector of path)
+
+          These lists of contours are not organized hierarchically (by
+          parent-child / outer-hole) relationships, and may include any number
+          of open paths or polygons. *)
+
     type t = paths
 
     (** [length t]
@@ -417,15 +452,29 @@ module type Intf = sig
     -> unit
     -> (module Config)
 
+  (** The signature of Clipper2 binding modules produced by the provided [Make]
+       functors *)
   module type S = S
 
+  (** [MakeD' (V) (P) (C)] creates a Clipper2 module with the 2d [float] vector
+       [V], the polygon type [P] (composed of [V.t]s, used for input/output), and a
+       user configuration (see {!config} for convenience constructor). *)
   module MakeD' : functor (V : VD) (P : Poly with type v := V.t) (_ : Config) ->
     S with type v := V.t and type poly := P.t
 
+  (** [MakeD (V) (C)] creates a Clipper2 module with the 2d [float] vector [V], and a user
+       configuration (see {!config} for convenience constructor). Same as
+       {!MakeD'}, but the polygon type is preset to [V.t list list]. *)
   module MakeD : functor (V : VD) -> S with type v := V.t and type poly := V.t list list
 
+  (** [MakeD' (V) (P) (C)] creates a Clipper2 module with the 2d [int64] vector
+       [V], the polygon type [P] (composed of [V.t]s, used for input/output), and a
+       user configuration (see {!config} for convenience constructor). *)
   module Make64' : functor (V : V64) (P : Poly with type v := V.t) (_ : Config) ->
     S with type v := V.t and type poly := P.t
 
+  (** [MakeD (V) (C)] creates a Clipper2 module with the 2d [int64] vector [V], and a user
+       configuration (see {!config} for convenience constructor). Same as
+       {!MakeD'}, but the polygon type is preset to [V.t list list]. *)
   module Make64 : functor (V : V64) -> S with type v := V.t and type poly := V.t list list
 end
