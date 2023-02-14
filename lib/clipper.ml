@@ -10,7 +10,8 @@ let config ?fill_rule ?join_type ?end_type ?precision ?eps () =
     let eps = eps
   end : Config )
 
-module MakeD' (V : VD) (P : Poly with type v := V.t) (Conf : Config) = struct
+module MakeD' (V : V with type n := float) (P : Poly with type v := V.t) (Conf : Config) =
+struct
   type path = C.Types.PathD.t Ctypes_static.ptr
   type paths = C.Types.PathsD.t Ctypes_static.ptr
 
@@ -41,7 +42,12 @@ module MakeD' (V : VD) (P : Poly with type v := V.t) (Conf : Config) = struct
   module Rect = struct
     include RectD
 
-    let make a b =
+    let make ~l ~t ~r ~b =
+      let buf, rect = alloc () in
+      let _ = C.Funcs.rectd buf l t r b in
+      rect
+
+    let of_pts a b =
       let buf, t = alloc ()
       and left = Float.min (V.x a) (V.x b)
       and right = Float.max (V.x a) (V.x b)
@@ -79,13 +85,13 @@ module MakeD' (V : VD) (P : Poly with type v := V.t) (Conf : Config) = struct
 
     let to_list t = List.init (length t) (get_point t)
 
-    let ellipse ?(fn = 0) ?centre rad =
+    let ellipse ?(fn = 0) ?centre wh =
       let centre =
         match centre with
         | Some c -> Point.of_v c
         | None -> Point.make 0. 0.
       and buf, t = alloc () in
-      let _ = C.Funcs.pathd_ellipse buf centre (V.x rad) (V.y rad) fn in
+      let _ = C.Funcs.pathd_ellipse buf centre (V.x wh *. 0.5) (V.y wh *. 0.5) fn in
       t
 
     let translate v t =
@@ -261,7 +267,7 @@ module MakeD' (V : VD) (P : Poly with type v := V.t) (Conf : Config) = struct
   end
 end
 
-module MakeD (V : VD) (Conf : Config) =
+module MakeD (V : V with type n := float) (Conf : Config) =
   MakeD'
     (V)
     (struct
@@ -272,7 +278,8 @@ module MakeD (V : VD) (Conf : Config) =
     end)
     (Conf)
 
-module Make64' (V : V64) (P : Poly with type v := V.t) (Conf : Config) = struct
+module Make64' (V : V with type n := int64) (P : Poly with type v := V.t) (Conf : Config) =
+struct
   type path = C.Types.Path64.t Ctypes_static.ptr
   type paths = C.Types.Paths64.t Ctypes_static.ptr
 
@@ -293,7 +300,12 @@ module Make64' (V : V64) (P : Poly with type v := V.t) (Conf : Config) = struct
   module Rect = struct
     include Rect64
 
-    let make a b =
+    let make ~l ~t ~r ~b =
+      let buf, rect = alloc () in
+      let _ = C.Funcs.rect64 buf l t r b in
+      rect
+
+    let of_pts a b =
       let buf, t = alloc ()
       and left = Int64.min (V.x a) (V.x b)
       and right = Int64.max (V.x a) (V.x b)
@@ -302,8 +314,8 @@ module Make64' (V : V64) (P : Poly with type v := V.t) (Conf : Config) = struct
       let _ = C.Funcs.rect64 buf left top right bottom in
       t
 
-    let width t = Int64.to_float @@ C.Funcs.rect64_width t
-    let height t = Int64.to_float @@ C.Funcs.rect64_height t
+    let width t = C.Funcs.rect64_width t
+    let height t = C.Funcs.rect64_height t
     let midpoint t = Point.to_v @@ C.Funcs.rect64_midpoint t
     let scale t s = C.Funcs.rect64_scale t s
 
@@ -332,14 +344,14 @@ module Make64' (V : V64) (P : Poly with type v := V.t) (Conf : Config) = struct
     let to_list t =
       List.init (length t) (fun i -> Point.to_v @@ C.Funcs.path64_get_point t i)
 
-    let ellipse ?(fn = 0) ?centre rad =
+    let ellipse ?(fn = 0) ?centre wh =
       let centre =
         match centre with
         | Some c -> Point.of_v c
         | None -> Point.make (Int64.of_int 0) (Int64.of_int 0)
       and buf, t = alloc ()
-      and rx = Int64.to_float @@ V.x rad
-      and ry = Int64.to_float @@ V.y rad in
+      and rx = (Int64.to_float @@ V.x wh) *. 0.5
+      and ry = (Int64.to_float @@ V.y wh) *. 0.5 in
       let _ = C.Funcs.path64_ellipse buf centre rx ry fn in
       t
 
@@ -514,7 +526,7 @@ module Make64' (V : V64) (P : Poly with type v := V.t) (Conf : Config) = struct
   end
 end
 
-module Make64 (V : V64) (Conf : Config) =
+module Make64 (V : V with type n := int64) (Conf : Config) =
   Make64'
     (V)
     (struct

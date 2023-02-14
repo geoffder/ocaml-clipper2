@@ -1,35 +1,22 @@
-module type VD = sig
-  (** Signature of a 2d decimal ([float]) vector type to be used to represent
-    points for the construction and destruction of Clipper2 path types *)
+module type V = sig
+  (** Signature of a 2d vector type to be used to represent
+       points for the construction and destruction of Clipper2 path types *)
 
-  (** 2d [float] vector type *)
+  (** numeric type for elements of the vector -- will be destructed (not
+       required in user supplied module) *)
+  type n
+
+  (** 2d vector type *)
   type t
 
   (** [v x y] conststructs a vector from [x] and [y] coordinates *)
-  val v : float -> float -> t
+  val v : n -> n -> t
 
   (** [x t] obtains the x coordinate of the vector [t] *)
-  val x : t -> float
+  val x : t -> n
 
   (** [y t] obtains the y coordinate of the vector [t] *)
-  val y : t -> float
-end
-
-module type V64 = sig
-  (** Signature of a 2d [int64] vector type to be used to represent
-    points for the construction and destruction of Clipper2 path types *)
-
-  (** 2d [int64] vector type *)
-  type t
-
-  (** [v x y] conststructs a vector from [x] and [y] coordinates *)
-  val v : int64 -> int64 -> t
-
-  (** [x t] obtains the x coordinate of the vector [t] *)
-  val x : t -> int64
-
-  (** [y t] obtains the y coordinate of the vector [t] *)
-  val y : t -> int64
+  val y : t -> n
 end
 
 module type Poly = sig
@@ -134,6 +121,9 @@ module type Config = sig
 end
 
 module type S = sig
+  (** numeric type matching the elements of {!type:v} *)
+  type n
+
   (** 2d vector type representing points *)
   type v
 
@@ -152,21 +142,27 @@ module type S = sig
     (** an axis-aligned rectangle (Clipper2 class) *)
     type t
 
-    (** [make a b]
+    (** [make ~l ~t ~r ~b]
+
+          Create an axis-aligned rectangle with the bounds [l]eft, [t]op,
+          [r]ight, and [b]ottom. *)
+    val make : l:n -> t:n -> r:n -> b:n -> t
+
+    (** [of_pts a b]
 
           Create an axis-aligned bounding box (rectangle) that contains the
           points [a] and [b]. *)
-    val make : v -> v -> t
+    val of_pts : v -> v -> t
 
     (** [width t]
 
           Obtain the width of the rectangle [t]. *)
-    val width : t -> float
+    val width : t -> n
 
     (** [height t]
 
           Obtain the height of the rectangle [t]. *)
-    val height : t -> float
+    val height : t -> n
 
     (** [midpoint t]
 
@@ -506,8 +502,7 @@ end
 module type Intf = sig
   (** {1 Functor Parameters }*)
 
-  module type VD = VD
-  module type V64 = V64
+  module type V = V
   module type Poly = Poly
 
   (** {2 Configuration} *)
@@ -563,24 +558,30 @@ module type Intf = sig
   (** [MakeD' (V) (P) (C)] creates a Clipper2 module with the 2d [float] vector
        [V], the polygon type [P] (composed of [V.t]s, used for input/output), and a
        user configuration (see {!config} for convenience constructor). *)
-  module MakeD' : functor (V : VD) (P : Poly with type v := V.t) (_ : Config) ->
-    S with type v := V.t and type poly := P.t
+  module MakeD' : functor
+    (V : V with type n := float)
+    (P : Poly with type v := V.t)
+    (_ : Config)
+    -> S with type n := float and type v := V.t and type poly := P.t
 
   (** [MakeD (V) (C)] creates a Clipper2 module with the 2d [float] vector [V], and a user
        configuration (see {!config} for convenience constructor). Same as
        {!MakeD'}, but the polygon type is preset to [V.t list list]. *)
-  module MakeD : functor (V : VD) (_ : Config) ->
-    S with type v := V.t and type poly := V.t list list
+  module MakeD : functor (V : V with type n := float) (_ : Config) ->
+    S with type n := float and type v := V.t and type poly := V.t list list
 
   (** [MakeD' (V) (P) (C)] creates a Clipper2 module with the 2d [int64] vector
        [V], the polygon type [P] (composed of [V.t]s, used for input/output), and a
        user configuration (see {!config} for convenience constructor). *)
-  module Make64' : functor (V : V64) (P : Poly with type v := V.t) (_ : Config) ->
-    S with type v := V.t and type poly := P.t
+  module Make64' : functor
+    (V : V with type n := int64)
+    (P : Poly with type v := V.t)
+    (_ : Config)
+    -> S with type n := int64 and type v := V.t and type poly := P.t
 
   (** [MakeD (V) (C)] creates a Clipper2 module with the 2d [int64] vector [V], and a user
        configuration (see {!config} for convenience constructor). Same as
        {!MakeD'}, but the polygon type is preset to [V.t list list]. *)
-  module Make64 : functor (V : V64) (_ : Config) ->
-    S with type v := V.t and type poly := V.t list list
+  module Make64 : functor (V : V with type n := int64) (_ : Config) ->
+    S with type n := int64 and type v := V.t and type poly := V.t list list
 end

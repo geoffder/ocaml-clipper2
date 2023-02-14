@@ -15,8 +15,7 @@ Clipper2} polygon clipping (C++) library.
 
 {2 Functor Parameters}
 
-- {{!Clipper.VD} [VD]} -- 2d float vector type
-- {{!Clipper.V64} [V64]} -- 2d int64 vector type
+- {{!Clipper.V} [V]} -- 2d vector type (float or int64)
 - {{!Clipper.Poly} [Poly]} -- polygon (outer path and zero or more inner paths) type
 - {{!Clipper.Config} [Config]} -- user specifiable defaults (see:
     {{!Clipper.config} [config]})
@@ -24,7 +23,7 @@ Clipper2} polygon clipping (C++) library.
 {2 Functors}
 
 Each functor produces instances that adhere to the signature {{!Clipper.S} [S]}.
-The [D] variants take a 2d float vector type in {{!Clipper.VD} [VD]}, and create
+The [D] variants take a 2d float vector type in {{!Clipper.V} [V]}, and create
 bindings to the decimal interface of Clipper2, while the [64] variants do the
 same but for the int64 interface.
 
