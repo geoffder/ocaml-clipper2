@@ -8,6 +8,7 @@
     let x t = fst t
     let y t = snd t
   end)
+  ((val Clipper.config ~fill_rule:`EvenOdd ()))
 let ex =
   let a = [ 0., 0.; 10., 0.; 10., 10.; 0., 10. ] in
   let b = List.map (fun (x, y) -&gt; x +. 5., y +. 5.) a in
