@@ -6,7 +6,13 @@ OCaml bindings to the polygon clipping and offseting library [Clipper2](http://w
 
 ## Documentation
 
-Documentation is available [online](https://geoffder.github.io/ocaml-clipper2/clipper/index.html).
+Documentation is available
+[online](https://geoffder.github.io/ocaml-clipper2/clipper/index.html), or
+locally via [odig](https://erratique.ch/software/odig) if this package has been installed.
+```
+opam install .
+odig doc clipper
+```
 
 ## Building
 
