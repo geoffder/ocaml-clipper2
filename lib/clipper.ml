@@ -38,6 +38,34 @@ module MakeD' (V : VD) (P : Poly with type v := V.t) (Conf : Config) = struct
     let[@inline] to_v t = V.v (x t) (y t)
   end
 
+  module Rect = struct
+    include RectD
+
+    let make a b =
+      let buf, t = alloc ()
+      and left = Float.min (V.x a) (V.x b)
+      and right = Float.max (V.x a) (V.x b)
+      and bottom = Float.min (V.y a) (V.y b)
+      and top = Float.max (V.y a) (V.y b) in
+      let _ = C.Funcs.rectd buf left top right bottom in
+      t
+
+    let width t = C.Funcs.rectd_width t
+    let height t = C.Funcs.rectd_height t
+    let midpoint t = Point.to_v @@ C.Funcs.rectd_midpoint t
+    let scale t s = C.Funcs.rectd_scale t s
+
+    let as_path t =
+      let buf, p = PathD.alloc () in
+      let _ = C.Funcs.rectd_as_path buf t in
+      p
+
+    let contains_pt t p = C.Funcs.rectd_contains_pt t (Point.of_v p)
+    let contains_rect a b = C.Funcs.rectd_contains_rect a b
+    let is_empty t = C.Funcs.rectd_is_empty t
+    let intersects a b = C.Funcs.rectd_intersects a b
+  end
+
   module Path = struct
     include PathD
 
@@ -64,6 +92,21 @@ module MakeD' (V : VD) (P : Poly with type v := V.t) (Conf : Config) = struct
       let buf, translated = alloc () in
       let _ = C.Funcs.pathd_translate buf t (V.x v) (V.y v) in
       translated
+
+    let bounds t =
+      let buf, rect = RectD.alloc () in
+      let _ = C.Funcs.pathd_bounds buf t in
+      rect
+
+    let rect_clip rect t =
+      let buf, clipped = PathD.alloc () in
+      let _ = C.Funcs.pathd_rect_clip buf rect t precision in
+      clipped
+
+    let rect_clip_line rect t =
+      let buf, clipped = PathsD.alloc () in
+      let _ = C.Funcs.pathsd_rect_clip_line buf rect t precision in
+      clipped
 
     let simplify ?(closed = true) ?(eps = eps) t =
       let buf, simplified = alloc () in
@@ -162,6 +205,20 @@ module MakeD' (V : VD) (P : Poly with type v := V.t) (Conf : Config) = struct
       let _ = C.Funcs.pathsd_xor buf subjects clips fill_rule precision in
       t
 
+    let bounds t =
+      let buf, rect = RectD.alloc () in
+      let _ = C.Funcs.pathsd_bounds buf t in
+      rect
+
+    let rect_clip ?(closed = true) rect t =
+      let buf, paths = PathsD.alloc () in
+      let _ =
+        if closed
+        then C.Funcs.pathsd_rect_clip buf rect t precision
+        else C.Funcs.pathsd_rect_clip_lines buf rect t precision
+      in
+      paths
+
     let inflate ?(join_type = join_type) ?(end_type = end_type) ~delta t =
       let buf, inflated = alloc ()
       and join_type, miter_limit = JoinType.make join_type
@@ -233,6 +290,34 @@ module Make64' (V : V64) (P : Poly with type v := V.t) (Conf : Config) = struct
     let[@inline] to_v t = V.v (x t) (y t)
   end
 
+  module Rect = struct
+    include Rect64
+
+    let make a b =
+      let buf, t = alloc ()
+      and left = Int64.min (V.x a) (V.x b)
+      and right = Int64.max (V.x a) (V.x b)
+      and bottom = Int64.min (V.y a) (V.y b)
+      and top = Int64.max (V.y a) (V.y b) in
+      let _ = C.Funcs.rect64 buf left top right bottom in
+      t
+
+    let width t = Int64.to_float @@ C.Funcs.rect64_width t
+    let height t = Int64.to_float @@ C.Funcs.rect64_height t
+    let midpoint t = Point.to_v @@ C.Funcs.rect64_midpoint t
+    let scale t s = C.Funcs.rect64_scale t s
+
+    let as_path t =
+      let buf, p = Path64.alloc () in
+      let _ = C.Funcs.rect64_as_path buf t in
+      p
+
+    let contains_pt t p = C.Funcs.rect64_contains_pt t (Point.of_v p)
+    let contains_rect a b = C.Funcs.rect64_contains_rect a b
+    let is_empty t = C.Funcs.rect64_is_empty t
+    let intersects a b = C.Funcs.rect64_intersects a b
+  end
+
   module Path = struct
     include Path64
 
@@ -262,6 +347,21 @@ module Make64' (V : V64) (P : Poly with type v := V.t) (Conf : Config) = struct
       let buf, translated = alloc () in
       let _ = C.Funcs.path64_translate buf t (V.x v) (V.y v) in
       translated
+
+    let bounds t =
+      let buf, rect = Rect64.alloc () in
+      let _ = C.Funcs.path64_bounds buf t in
+      rect
+
+    let rect_clip rect t =
+      let buf, clipped = Path64.alloc () in
+      let _ = C.Funcs.path64_rect_clip buf rect t in
+      clipped
+
+    let rect_clip_line rect t =
+      let buf, clipped = Paths64.alloc () in
+      let _ = C.Funcs.paths64_rect_clip_line buf rect t in
+      clipped
 
     let trim_collinear ?(closed = true) t =
       let buf, trimmed = alloc () in
@@ -359,6 +459,20 @@ module Make64' (V : V64) (P : Poly with type v := V.t) (Conf : Config) = struct
       and fill_rule = FillRule.make fill_rule in
       let _ = C.Funcs.paths64_xor buf subjects clips fill_rule in
       t
+
+    let bounds t =
+      let buf, rect = Rect64.alloc () in
+      let _ = C.Funcs.paths64_bounds buf t in
+      rect
+
+    let rect_clip ?(closed = true) rect t =
+      let buf, paths = Paths64.alloc () in
+      let _ =
+        if closed
+        then C.Funcs.paths64_rect_clip buf rect t
+        else C.Funcs.paths64_rect_clip_lines buf rect t
+      in
+      paths
 
     let inflate ?(join_type = join_type) ?(end_type = end_type) ~delta t =
       let buf, inflated = alloc ()

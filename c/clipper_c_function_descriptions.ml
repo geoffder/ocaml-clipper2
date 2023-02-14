@@ -176,6 +176,16 @@ module Functions (F : Ctypes.FOREIGN) = struct
       "clipper_pathd_rect_clip"
       (ptr void @-> ptr RectD.t @-> ptr PathD.t @-> int @-> returning (ptr PathD.t))
 
+  let paths64_rect_clip =
+    foreign
+      "clipper_paths64_rect_clip"
+      (ptr void @-> ptr Rect64.t @-> ptr Paths64.t @-> returning (ptr Paths64.t))
+
+  let pathsd_rect_clip =
+    foreign
+      "clipper_pathsd_rect_clip"
+      (ptr void @-> ptr RectD.t @-> ptr PathsD.t @-> int @-> returning (ptr PathsD.t))
+
   let paths64_rect_clip_line =
     foreign
       "clipper_paths64_rect_clip_line"

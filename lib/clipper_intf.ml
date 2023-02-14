@@ -148,6 +148,62 @@ module type S = sig
 
   include module type of ConfigTypes
 
+  module Rect : sig
+    (** an axis-aligned rectangle (Clipper2 class) *)
+    type t
+
+    (** [make a b]
+
+          Create an axis-aligned bounding box (rectangle) that contains the
+          points [a] and [b]. *)
+    val make : v -> v -> t
+
+    (** [width t]
+
+          Obtain the width of the rectangle [t]. *)
+    val width : t -> float
+
+    (** [height t]
+
+          Obtain the height of the rectangle [t]. *)
+    val height : t -> float
+
+    (** [midpoint t]
+
+          Obtain the midpoint of the rectangle [t]. *)
+    val midpoint : t -> v
+
+    (** [scale t s]
+
+          Scale the rectangle [t] by the factor [s] (mutates in place). *)
+    val scale : t -> float -> unit
+
+    (** [as_path t]
+
+          Obtain a path describing the perimeter of the rectangle [t]. *)
+    val as_path : t -> path
+
+    (** [contains_pt t p]
+
+          Determine whether the point [p] lies within the rectangle [t]. *)
+    val contains_pt : t -> v -> bool
+
+    (** [contains_rect a b]
+
+          Determine whether the rectangle [a] fully contains the rectangle [b]. *)
+    val contains_rect : t -> t -> bool
+
+    (** [intersects a b]
+
+          Determine whether the rectangles [a] and [b] intersect. *)
+    val intersects : t -> t -> bool
+
+    (** [is_empty t]
+
+          Check whether the rectangle [t] has an area of zero. *)
+    val is_empty : t -> bool
+  end
+
   module Path : sig
     (** The Clipper2 path type (std::vector of point) *)
 
@@ -185,6 +241,22 @@ module type S = sig
 
        Translate the path [t] along the vector [v]. *)
     val translate : v -> t -> t
+
+    (** [bounds t]
+
+          Compute the axis-aligned bounding box that contains the path [t]. *)
+    val bounds : t -> Rect.t
+
+    (** [rect_clip r t]
+
+          Intersect the polygonal path [t] with the axis-aligned rectangle [r]. *)
+    val rect_clip : Rect.t -> t -> t
+
+    (** [rect_clip_line r t]
+
+          Intersect the open path (line) [t] with the axis-aligned rectangle
+          [r]. *)
+    val rect_clip_line : Rect.t -> t -> paths
 
     (** [simplify ?closed ?eps t]
 
@@ -379,6 +451,18 @@ module type S = sig
           [subjects] and [clips] according to [fill_rule]. The result includes
           regions covered by the [subjects] or [clips] polygons, but not both. *)
     val xor : ?fill_rule:fill_rule -> t -> t -> t
+
+    (** [bounds t]
+
+          Compute the axis-aligned bounding box that contains the paths [t]. *)
+    val bounds : t -> Rect.t
+
+    (** [rect_clip ?closed r t]
+
+          Intersect the paths [t] with the axis-aligned rectangle [r]. Paths are
+          treated as closed/polygonal by default, but open paths may be clipped
+          by setting [~closed:false]. *)
+    val rect_clip : ?closed:bool -> Rect.t -> t -> t
 
     (** [inflate ?join_type ?end_type ~delta t]
 
