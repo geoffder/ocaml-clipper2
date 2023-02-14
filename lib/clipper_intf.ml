@@ -114,10 +114,22 @@ end
 module type Config = sig
   (** Configuration parameters allowing user control Clipper2 interface defaults *)
 
+  (** The default filling rule used by the clipping algorithm (for boolean
+       operations) *)
   val fill_rule : ConfigTypes.fill_rule option
+
+  (** The default treatment of corners when offsetting paths *)
   val join_type : ConfigTypes.join_type option
+
+  (** The default for whether paths are treated as closed (polygons), or as
+       open paths (and if so, what open path strategy to take) *)
   val end_type : ConfigTypes.end_type option
+
+  (** The number of significant decimal places to use during numerical
+       operations (if using the float interface). Can be up to [8]. *)
   val precision : int option
+
+  (** The default epsilon value to use for relevant functions. *)
   val eps : float option
 end
 
@@ -426,6 +438,10 @@ module type Intf = sig
        Construct a {!module-type:Config} functor argument to set defaults
        appropriate to your use case.
 
+      {[
+        MakeD (V) ((val config ()))
+      ]}
+
        - [fill_rule] sets the default filling rule used by the clipping
          algorithm used for boolean operations
          (default is [`NonZero], as used by {{:https://openscad.org/} OpenSCAD}).
@@ -436,7 +452,8 @@ module type Intf = sig
          if so).
        - [precision] sets the number of decimals of precision used for
          operations that are performed with [int64] internally in Clipper2
-         (default is [2]). This is only relevant if using the decimal interface.
+         (default is [2], up to [8] is allowed). This is only relevant if using
+         the decimal interface.
        - [eps] sets the default epsilon value used for the functions that take
          it as argument. If not provided, this defaults to the smallest relevant
          significant figure as determined by [precision] in the case of the
@@ -468,7 +485,8 @@ module type Intf = sig
   (** [MakeD (V) (C)] creates a Clipper2 module with the 2d [float] vector [V], and a user
        configuration (see {!config} for convenience constructor). Same as
        {!MakeD'}, but the polygon type is preset to [V.t list list]. *)
-  module MakeD : functor (V : VD) -> S with type v := V.t and type poly := V.t list list
+  module MakeD : functor (V : VD) (_ : Config) ->
+    S with type v := V.t and type poly := V.t list list
 
   (** [MakeD' (V) (P) (C)] creates a Clipper2 module with the 2d [int64] vector
        [V], the polygon type [P] (composed of [V.t]s, used for input/output), and a
@@ -479,5 +497,6 @@ module type Intf = sig
   (** [MakeD (V) (C)] creates a Clipper2 module with the 2d [int64] vector [V], and a user
        configuration (see {!config} for convenience constructor). Same as
        {!MakeD'}, but the polygon type is preset to [V.t list list]. *)
-  module Make64 : functor (V : V64) -> S with type v := V.t and type poly := V.t list list
+  module Make64 : functor (V : V64) (_ : Config) ->
+    S with type v := V.t and type poly := V.t list list
 end

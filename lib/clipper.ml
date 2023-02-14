@@ -19,7 +19,12 @@ module MakeD' (V : VD) (P : Poly with type v := V.t) (Conf : Config) = struct
   let fill_rule = Option.value ~default:`NonZero Conf.fill_rule
   let join_type = Option.value ~default:`Round Conf.join_type
   let end_type = Option.value ~default:`Polygon Conf.end_type
-  let precision = Option.value ~default:2 Conf.precision
+
+  let precision =
+    match Conf.precision with
+    | None -> 2
+    | Some digits when digits >= 0 && digits <= 8 -> digits
+    | _ -> invalid_arg "Precision must be between 0 and 8."
 
   let eps =
     match Conf.eps with
@@ -199,7 +204,7 @@ module MakeD' (V : VD) (P : Poly with type v := V.t) (Conf : Config) = struct
   end
 end
 
-module MakeD (V : VD) =
+module MakeD (V : VD) (Conf : Config) =
   MakeD'
     (V)
     (struct
@@ -208,7 +213,7 @@ module MakeD (V : VD) =
       let to_list = Fun.id
       let of_list = Fun.id
     end)
-    ((val config ()))
+    (Conf)
 
 module Make64' (V : V64) (P : Poly with type v := V.t) (Conf : Config) = struct
   type path = C.Types.Path64.t Ctypes_static.ptr
@@ -395,7 +400,7 @@ module Make64' (V : V64) (P : Poly with type v := V.t) (Conf : Config) = struct
   end
 end
 
-module Make64 (V : V64) =
+module Make64 (V : V64) (Conf : Config) =
   Make64'
     (V)
     (struct
@@ -404,4 +409,4 @@ module Make64 (V : V64) =
       let to_list = Fun.id
       let of_list = Fun.id
     end)
-    ((val config ()))
+    (Conf)

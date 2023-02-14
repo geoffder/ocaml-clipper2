@@ -12,21 +12,27 @@ module C =
     end)
     ((val Clipper.config ()))
 
-module Ctup = Clipper.MakeD (struct
-  type t = float * float
+module Ctup =
+  Clipper.MakeD
+    (struct
+      type t = float * float
 
-  let v x y = x, y
-  let x t = fst t
-  let y t = snd t
-end)
+      let v x y = x, y
+      let x t = fst t
+      let y t = snd t
+    end)
+    ((val Clipper.config ()))
 
-module C64 = Clipper.Make64 (struct
-  type t = int64 * int64
+module C64 =
+  Clipper.Make64
+    (struct
+      type t = int64 * int64
 
-  let v x y = x, y
-  let x t = fst t
-  let y t = snd t
-end)
+      let v x y = x, y
+      let x t = fst t
+      let y t = snd t
+    end)
+    ((val Clipper.config ()))
 
 let%test "path" =
   let n = 10000 in
