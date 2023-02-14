@@ -5,7 +5,7 @@ Clipper2} polygon clipping (C++) library.
 
 {%html:
   <p style="text-align:center;">
-  <img src="../assets/clipper2_australia.png" style="width:100mm;"/>
+  <img src="_assets/clipper2_australia.png" style="width:100mm;"/>
   </p> %}
 
 {1:api API}
