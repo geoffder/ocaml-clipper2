@@ -2,8 +2,8 @@ module type V = sig
   (** Signature of a 2d vector type to be used to represent
        points for the construction and destruction of Clipper2 path types *)
 
-  (** numeric type for elements of the vector -- will be destructed (not
-       required in user supplied module) *)
+  (** numeric type for elements of the vector -- will be destructed (type
+       declaration not required in user supplied module) *)
   type n
 
   (** 2d vector type *)
@@ -24,7 +24,8 @@ module type Poly = sig
     (holes). To be used for construction and destruction of Clipper2 paths
     types. *)
 
-  (** 2d vector type representing points *)
+  (** 2d vector type representing points -- will be destructed (type declaration
+       not required in user supplied module) *)
   type v
 
   (** polygon type *)
