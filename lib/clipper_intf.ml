@@ -172,7 +172,7 @@ module type S = sig
 
     (** [scale t s]
 
-          Scale the rectangle [t] by the factor [s] (mutates in place). *)
+          Scale the rectangle [t] by the factor [s]. *)
     val scale : float -> t -> t
 
     (** [as_path t]
