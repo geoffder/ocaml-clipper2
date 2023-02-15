@@ -655,7 +655,9 @@ module Functions (F : Ctypes.FOREIGN) = struct
       (ptr Rect64.t @-> ptr Rect64.t @-> returning bool)
 
   let rect64_scale =
-    foreign "clipper_rect64_scale" (ptr Rect64.t @-> double @-> returning void)
+    foreign
+      "clipper_rect64_scale"
+      (ptr void @-> ptr Rect64.t @-> double @-> returning (ptr Rect64.t))
 
   let rect64_is_empty = foreign "clipper_rect64_is_empty" (ptr Rect64.t @-> returning bool)
 
@@ -680,7 +682,9 @@ module Functions (F : Ctypes.FOREIGN) = struct
     foreign "clipper_rectd_contains_rect" (ptr RectD.t @-> ptr RectD.t @-> returning bool)
 
   let rectd_scale =
-    foreign "clipper_rectd_scale" (ptr RectD.t @-> double @-> returning void)
+    foreign
+      "clipper_rectd_scale"
+      (ptr void @-> ptr RectD.t @-> double @-> returning (ptr RectD.t))
 
   let rectd_is_empty = foreign "clipper_rectd_is_empty" (ptr RectD.t @-> returning bool)
 

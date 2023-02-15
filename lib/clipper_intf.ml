@@ -173,7 +173,7 @@ module type S = sig
     (** [scale t s]
 
           Scale the rectangle [t] by the factor [s] (mutates in place). *)
-    val scale : t -> float -> unit
+    val scale : float -> t -> t
 
     (** [as_path t]
 
@@ -513,7 +513,6 @@ module type Intf = sig
   module type Config = Config
 
   (** [config ?fill_rule ?join_type ?end_type ?precision ?eps ()]
-
 
        Construct a {!module-type:Config} functor argument to set defaults
        appropriate to your use case.

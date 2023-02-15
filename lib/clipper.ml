@@ -59,7 +59,11 @@ struct
     let width t = C.Funcs.rectd_width t
     let height t = C.Funcs.rectd_height t
     let midpoint t = Point.to_v @@ C.Funcs.rectd_midpoint t
-    let scale t s = C.Funcs.rectd_scale t s
+
+    let scale s t =
+      let buf, scaled = alloc () in
+      let _ = C.Funcs.rectd_scale buf t s in
+      scaled
 
     let as_path t =
       let buf, p = PathD.alloc () in
@@ -161,8 +165,8 @@ struct
 
     let to_list t =
       List.init (length t) (fun i ->
-          let len = Conv.size_to_int @@ C.Funcs.pathsd_path_length t i in
-          List.init len (fun j -> get_point t i j) )
+        let len = Conv.size_to_int @@ C.Funcs.pathsd_path_length t i in
+        List.init len (fun j -> get_point t i j) )
 
     let translate v t =
       let buf, translated = alloc () in
@@ -317,7 +321,11 @@ struct
     let width t = C.Funcs.rect64_width t
     let height t = C.Funcs.rect64_height t
     let midpoint t = Point.to_v @@ C.Funcs.rect64_midpoint t
-    let scale t s = C.Funcs.rect64_scale t s
+
+    let scale s t =
+      let buf, scaled = alloc () in
+      let _ = C.Funcs.rect64_scale buf t s in
+      scaled
 
     let as_path t =
       let buf, p = Path64.alloc () in
@@ -427,8 +435,8 @@ struct
 
     let to_list t =
       List.init (length t) (fun i ->
-          let len = Conv.size_to_int @@ C.Funcs.paths64_path_length t i in
-          List.init len (fun j -> get_point t i j) )
+        let len = Conv.size_to_int @@ C.Funcs.paths64_path_length t i in
+        List.init len (fun j -> get_point t i j) )
 
     let boolean_op ?(fill_rule = fill_rule) ~op subjects clips =
       let buf, t = alloc ()
