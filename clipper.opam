@@ -16,6 +16,9 @@ depends: [
   "ctypes"
   "ctypes-foreign"
   "conf-cmake"
+  "ppx_inline_test" {with-test}
+  "OCADml" {>= "0.3.2" & with-test}
+  "gg" {with-test}
   "odoc" {with-doc}
 ]
 build: [

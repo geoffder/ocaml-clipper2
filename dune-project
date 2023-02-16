@@ -30,4 +30,10 @@
    (>= 4.14.0))
   ctypes
   ctypes-foreign
-  conf-cmake))
+  conf-cmake
+  (ppx_inline_test :with-test)
+  (OCADml
+   (and
+    (>= 0.3.2)
+    :with-test))
+  (gg :with-test)))
