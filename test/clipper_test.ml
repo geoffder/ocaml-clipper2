@@ -1,16 +1,4 @@
-module C =
-  Clipper.MakeD'
-    (OCADml.V2)
-    (struct
-      type t = OCADml.Poly2.t
-
-      let to_list t = t.OCADml.Poly2.outer :: t.holes
-
-      let of_list = function
-        | [] -> OCADml.Poly2.make []
-        | outer :: holes -> OCADml.Poly2.make ~holes outer
-    end)
-    ((val Clipper.config ()))
+module C = Clipper.MakeD' (OCADml.V2) (OCADml.Poly2) ((val Clipper.config ()))
 
 module Ctup =
   Clipper.MakeD
@@ -38,8 +26,8 @@ let%test "path" =
   let n = 10000 in
   let pts =
     List.init n (fun i ->
-        let i = Float.of_int i in
-        OCADml.v2 i i )
+      let i = Float.of_int i in
+      OCADml.v2 i i )
   in
   let path = C.Path.of_list pts in
   Gc.full_major ();
