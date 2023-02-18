@@ -296,6 +296,8 @@ module type S = sig
           by setting [~closed:false]. *)
     val rect_clip : ?closed:bool -> Rect.t -> t -> paths
 
+    (** {1 Offsetting} *)
+
     (** [inflate ?join_type ?end_type ~delta t]
 
           Offset the polygon (or open path) [t] by [delta]. If [t] is a closed
@@ -313,6 +315,22 @@ module type S = sig
           - {b Caution:} offsetting self-intersecting polygons may produce
             unexpected results. *)
     val inflate : ?join_type:join_type -> ?end_type:end_type -> delta:float -> t -> paths
+
+    (** {1 Minkowski} *)
+
+    (** [minkowski_sum ?closed ~pattern t]
+
+        Apply {{:https://en.wikipedia.org/wiki/Minkowski_addition} Minkowski
+        addition} of the path [pattern] to the path [t]. [t] is treated
+        as a [closed] polygon unless otherwise specified. *)
+    val minkowski_sum : ?closed:bool -> pattern:t -> t -> t
+
+    (** [minkowski_diff ?closed ~pattern t]
+
+        Apply {{:https://en.wikipedia.org/wiki/Minkowski_addition} Minkowski
+        subtraction} of the path [pattern] from the path [t]. [t] is treated
+        as a [closed] polygon unless otherwise specified. *)
+    val minkowski_diff : ?closed:bool -> pattern:t -> t -> t
 
     (** {1 Path Simplification} *)
 

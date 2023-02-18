@@ -284,6 +284,16 @@ struct
       PathsD.add_path subjects t;
       Paths.inflate ?join_type ?end_type ~delta subjects
 
+    let minkowski_sum ?(closed = true) ~pattern t =
+      let buf, summed = alloc () in
+      let _ = C.Funcs.pathd_minkowski_sum buf pattern t closed precision in
+      summed
+
+    let minkowski_diff ?(closed = true) ~pattern t =
+      let buf, diffed = alloc () in
+      let _ = C.Funcs.pathd_minkowski_diff buf pattern t closed precision in
+      diffed
+
     let simplify ?(closed = true) ?(eps = eps) t =
       let buf, simplified = alloc () in
       let _ = C.Funcs.pathd_simplify buf t eps (not closed) in
@@ -595,6 +605,16 @@ struct
       let subjects = Paths64.make () in
       Paths64.add_path subjects t;
       Paths.inflate ?join_type ?end_type ~delta subjects
+
+    let minkowski_sum ?(closed = true) ~pattern t =
+      let buf, summed = alloc () in
+      let _ = C.Funcs.path64_minkowski_sum buf pattern t closed in
+      summed
+
+    let minkowski_diff ?(closed = true) ~pattern t =
+      let buf, diffed = alloc () in
+      let _ = C.Funcs.path64_minkowski_diff buf pattern t closed in
+      diffed
 
     let trim_collinear ?(closed = true) t =
       let buf, trimmed = alloc () in

@@ -443,7 +443,7 @@ module Functions (F : Ctypes.FOREIGN) = struct
   let path64_minkowski_sum =
     foreign
       "clipper_path64_minkowski_sum"
-      (ptr void @-> ptr Path64.t @-> ptr Path64.t @-> int @-> returning (ptr Paths64.t))
+      (ptr void @-> ptr Path64.t @-> ptr Path64.t @-> bool @-> returning (ptr Paths64.t))
 
   let pathd_minkowski_sum =
     foreign
@@ -451,14 +451,14 @@ module Functions (F : Ctypes.FOREIGN) = struct
       ( ptr void
       @-> ptr PathD.t
       @-> ptr PathD.t
-      @-> int
+      @-> bool
       @-> int
       @-> returning (ptr PathsD.t) )
 
   let path64_minkowski_diff =
     foreign
       "clipper_path64_minkowski_diff"
-      (ptr void @-> ptr Path64.t @-> ptr Path64.t @-> int @-> returning (ptr Paths64.t))
+      (ptr void @-> ptr Path64.t @-> ptr Path64.t @-> bool @-> returning (ptr Paths64.t))
 
   let pathd_minkowski_diff =
     foreign
@@ -466,7 +466,7 @@ module Functions (F : Ctypes.FOREIGN) = struct
       ( ptr void
       @-> ptr PathD.t
       @-> ptr PathD.t
-      @-> int
+      @-> bool
       @-> int
       @-> returning (ptr PathsD.t) )
 
