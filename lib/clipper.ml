@@ -108,15 +108,14 @@ struct
       let _ = C.Funcs.pathd_bounds buf t in
       rect
 
-    let rect_clip rect t =
-      let buf, clipped = PathD.alloc () in
-      let _ = C.Funcs.pathd_rect_clip buf rect t precision in
-      clipped
-
-    let rect_clip_line rect t =
-      let buf, clipped = PathsD.alloc () in
-      let _ = C.Funcs.pathsd_rect_clip_line buf rect t precision in
-      clipped
+    let rect_clip ?(closed = true) rect t =
+      let buf, paths = PathsD.alloc () in
+      let _ =
+        if closed
+        then C.Funcs.pathd_rect_clip buf rect t precision
+        else C.Funcs.pathd_rect_clip_line buf rect t precision
+      in
+      paths
 
     let simplify ?(closed = true) ?(eps = eps) t =
       let buf, simplified = alloc () in
@@ -373,15 +372,14 @@ struct
       let _ = C.Funcs.path64_bounds buf t in
       rect
 
-    let rect_clip rect t =
-      let buf, clipped = Path64.alloc () in
-      let _ = C.Funcs.path64_rect_clip buf rect t in
-      clipped
-
-    let rect_clip_line rect t =
-      let buf, clipped = Paths64.alloc () in
-      let _ = C.Funcs.paths64_rect_clip_line buf rect t in
-      clipped
+    let rect_clip ?(closed = true) rect t =
+      let buf, paths = Paths64.alloc () in
+      let _ =
+        if closed
+        then C.Funcs.path64_rect_clip buf rect t
+        else C.Funcs.path64_rect_clip_line buf rect t
+      in
+      paths
 
     let trim_collinear ?(closed = true) t =
       let buf, trimmed = alloc () in

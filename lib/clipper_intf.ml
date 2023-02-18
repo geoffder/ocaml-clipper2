@@ -244,16 +244,12 @@ module type S = sig
           Compute the axis-aligned bounding box that contains the path [t]. *)
     val bounds : t -> Rect.t
 
-    (** [rect_clip r t]
+    (** [rect_clip ?closed r t]
 
-          Intersect the polygonal path [t] with the axis-aligned rectangle [r]. *)
-    val rect_clip : Rect.t -> t -> t
-
-    (** [rect_clip_line r t]
-
-          Intersect the open path (line) [t] with the axis-aligned rectangle
-          [r]. *)
-    val rect_clip_line : Rect.t -> t -> paths
+          Intersect the path [t] with the axis-aligned rectangle [r]. The path is
+          treated as closed/polygonal by default, but an open path may be clipped
+          by setting [~closed:false]. *)
+    val rect_clip : ?closed:bool -> Rect.t -> t -> paths
 
     (** [simplify ?closed ?eps t]
 
