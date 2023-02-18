@@ -143,6 +143,8 @@ module type S = sig
     (** an axis-aligned rectangle (Clipper2 class) *)
     type t
 
+    (** {1 Construction / Conversion} *)
+
     (** [make ~l ~t ~r ~b]
 
           Create an axis-aligned rectangle with the bounds [l]eft, [t]op,
@@ -154,6 +156,20 @@ module type S = sig
           Create an axis-aligned bounding box (rectangle) that contains the
           points [a] and [b]. *)
     val of_pts : v -> v -> t
+
+    (** [as_path t]
+
+          Obtain a path describing the perimeter of the rectangle [t]. *)
+    val as_path : t -> path
+
+    (** {1 Transformation} *)
+
+    (** [scale t s]
+
+          Scale the rectangle [t] by the factor [s]. *)
+    val scale : float -> t -> t
+
+    (** {1 Geometry} *)
 
     (** [width t]
 
@@ -169,16 +185,6 @@ module type S = sig
 
           Obtain the midpoint of the rectangle [t]. *)
     val midpoint : t -> v
-
-    (** [scale t s]
-
-          Scale the rectangle [t] by the factor [s]. *)
-    val scale : float -> t -> t
-
-    (** [as_path t]
-
-          Obtain a path describing the perimeter of the rectangle [t]. *)
-    val as_path : t -> path
 
     (** [contains_pt t p]
 
@@ -206,15 +212,7 @@ module type S = sig
 
     type t = path
 
-    (** [length t]
-
-       Return the number of points in the path [t]. *)
-    val length : t -> int
-
-    (** [get_point t i]
-
-       Get the point at index [i] from the path [t]. *)
-    val get_point : t -> int -> v
+    (** {1 Construction / Conversion} *)
 
     (** [of_list ps]
 
@@ -234,15 +232,62 @@ module type S = sig
         calculated based on the dimensions. *)
     val ellipse : ?fn:int -> ?centre:v -> v -> t
 
-    (** [translate v t]
+    (** {1 Access} *)
 
-       Translate the path [t] along the vector [v]. *)
-    val translate : v -> t -> t
+    (** [length t]
 
-    (** [bounds t]
+       Return the number of points in the path [t]. *)
+    val length : t -> int
 
-          Compute the axis-aligned bounding box that contains the path [t]. *)
-    val bounds : t -> Rect.t
+    (** [get_point t i]
+
+       Get the point at index [i] from the path [t]. *)
+    val get_point : t -> int -> v
+
+    (** {1 Boolean Operations} *)
+
+    (** [boolean_op ?fill_rule ~op a b]
+
+          Perform the boolean operation [op] with the specified [fill_rule]
+          on the polygons (closed paths) [a] and [b]. *)
+    val boolean_op : ?fill_rule:fill_rule -> op:clip_type -> t -> t -> paths
+
+    (** [intersect ?fill_rule a b]
+
+          Intersect the polygons [a] and [b] according to [fill_rule]. The
+          result includes regions covered by both polygons. *)
+    val intersect : ?fill_rule:fill_rule -> t -> t -> paths
+
+    (** [union ?fill_rule subjects]
+
+          Union the polygons [subjects] according to [fill_rule]. The result
+          includes the regions covered by any of the polygons contained in
+          [subjects]. *)
+    val union : ?fill_rule:fill_rule -> t list -> paths
+
+    (** [add ?fill_rule a b]
+
+          {!union} the polygon [a] and [b]. *)
+    val add : ?fill_rule:fill_rule -> t -> t -> paths
+
+    (** [difference ?fill_rule a b]
+
+          Difference the polygon [b] from the polygon [a] according to
+          [fill_rule]. The result includes the regions covered by the polygon [a],
+          but not the polygon [b]. *)
+    val difference : ?fill_rule:fill_rule -> t -> t -> paths
+
+    (** [sub a b]
+
+           Difference the polygon [b] from [a] (alias to {!difference}). *)
+    val sub : ?fill_rule:fill_rule -> t -> t -> paths
+
+    (** [xor ?fill_rule subjects clips]
+
+          Perform the exclusive-or boolean operation between the closed paths
+          [a] and [b] according to [fill_rule]. The result includes
+          regions covered by the either [a] or [b], but not both. *)
+    val xor : ?fill_rule:fill_rule -> t -> t -> paths
 
     (** [rect_clip ?closed r t]
 
@@ -250,6 +295,26 @@ module type S = sig
           treated as closed/polygonal by default, but an open path may be clipped
           by setting [~closed:false]. *)
     val rect_clip : ?closed:bool -> Rect.t -> t -> paths
+
+    (** [inflate ?join_type ?end_type ~delta t]
+
+          Offset the polygon (or open path) [t] by [delta]. If [t] is a closed
+          polygonal path, it's important that [end_type] is [`Polygon] (default
+          if not overridden by user's [Config]). If instead you select one of the open
+          path end types (e.g. [`Joined]), the polygon's {i outline} will be inflated
+          ({{:https://github.com/AngusJohnson/Clipper2/discussions/154#discussion-4284428}
+          example}).
+
+          - with closed paths (polygons), a positive delta specifies how much outer
+            polygon contours will expand and how much inner "hole" contours will contract (and
+            the converse with negative deltas).
+          - with open paths (polylines), including EndType.Join, delta specifies the width
+            of the inflated line.
+          - {b Caution:} offsetting self-intersecting polygons may produce
+            unexpected results. *)
+    val inflate : ?join_type:join_type -> ?end_type:end_type -> delta:float -> t -> paths
+
+    (** {1 Path Simplification} *)
 
     (** [simplify ?closed ?eps t]
 
@@ -295,21 +360,35 @@ module type S = sig
        paths [t]. The path is treated as [closed] by default. *)
     val strip_duplicates : ?closed:bool -> t -> t
 
-    (** [point_inside t p]
+    (** {1 Transformation} *)
 
-       Determine whether the point [p] is inside, outside, or on the border of
-       [t]. *)
-    val point_inside : t -> v -> [> `Inside | `OnBorder | `Outside ]
+    (** [translate v t]
+
+       Translate the path [t] along the vector [v]. *)
+    val translate : v -> t -> t
+
+    (** {1 Geometry} *)
 
     (** [area t]
 
        Compute the signed area of the path [t]. *)
     val area : t -> float
 
+    (** [bounds t]
+
+          Compute the axis-aligned bounding box that contains the path [t]. *)
+    val bounds : t -> Rect.t
+
     (** [is_positive t]
 
        Check if the orientation/winding of the path [t] is positive. *)
     val is_positive : t -> bool
+
+    (** [point_inside t p]
+
+       Determine whether the point [p] is inside, outside, or on the border of
+       [t]. *)
+    val point_inside : t -> v -> [> `Inside | `OnBorder | `Outside ]
   end
 
   module Paths : sig
@@ -320,6 +399,38 @@ module type S = sig
           of open paths or polygons. *)
 
     type t = paths
+
+    (** {1 Construction / Conversion} *)
+
+    (** [of_list ps]
+
+       Create a path from the list of lists of 2d points [ps]. *)
+    val of_list : v list list -> t
+
+    (** [to_list t]
+
+       Convert the paths [t] to a list of lists of 2d points. *)
+    val to_list : t -> v list list
+
+    (** [of_poly p]
+
+          Create a paths from a polygon [p]. *)
+    val of_poly : poly -> t
+
+    (** [of_polys ps]
+
+          Create a paths from a list of polygons [ps]. *)
+    val of_polys : poly list -> t
+
+    (** [to_polys ?fill_rule t]
+
+          Extract a list of non-overlapping polygons from the set of paths [t].
+          This involves a clipper union operation tracking the parent-child
+          (outline-hole) relationships of the paths, thus [fill_rule] can be
+          provided to override the default rule if desired. *)
+    val to_polys : ?fill_rule:fill_rule -> t -> poly list
+
+    (** {1 Access} *)
 
     (** [length t]
 
@@ -341,62 +452,7 @@ module type S = sig
        Get the point [j] from the path at index [i] in [t]. *)
     val get_point : t -> int -> int -> v
 
-    (** [of_list ps]
-
-       Create a path from the list of lists of 2d points [ps]. *)
-    val of_list : v list list -> t
-
-    (** [to_list t]
-
-       Convert the paths [t] to a list of lists of 2d points. *)
-    val to_list : t -> v list list
-
-    (** [translate v t]
-
-       Translate the paths [t] along the vector [v]. *)
-    val translate : v -> t -> t
-
-    (** [simplify ?closed ?eps t]
-
-       Remove extraneous vertices from the paths [t] (similar to
-       {!ramer_douglas_peucker}). *)
-    val simplify : ?closed:bool -> ?eps:float -> t -> t
-
-    (** [ramer_douglas_peucker ?eps t]
-
-       Applies the
-       {{:https://en.wikipedia.org/wiki/Ramer%E2%80%93Douglas%E2%80%93Peucker_algorithm}
-       Ramer-Douglas-Peucker algorithm} to remove extraneous vertices from the
-       paths [t]. Put simply, vertices will be removed if they are less than
-       [eps] distance from imaginary lines passing through their adjacent vertices.
-
-       This function is particularly useful following offsetting (ie
-       inflating/shrinking paths). Offsetting often creates tiny segments that don't
-       improve path quality. Further these tiny segments create angles that are
-       strongly influenced by integer rounding. While these tiny segments are too
-       small to be noticeable following a single offset procedure, they're likely to
-       degrade the quality of subsequent offsets. And they'll also degrade
-       performance. Because of this, it is strongly recommended calling this function
-       after every polygon offset. *)
-    val ramer_douglas_peucker : ?eps:float -> t -> t
-
-    (** [strip_near_equal ?closed ?eps t]
-
-       Remove adjacent points that are less than [eps] distance apart from
-       their neighbour from the paths [t]. The path is treated as [closed] by
-       default. *)
-    val strip_near_equal : ?closed:bool -> ?eps:float -> t -> t
-
-    (** [strip_duplicates ?closed ?eps t]
-
-       Remove adjacent points that duplicate of their neighbours from the
-       paths [t]. The path is treated as [closed] by default. *)
-    val strip_duplicates : ?closed:bool -> t -> t
-
-    (** [area t]
-
-       Compute the summed signed area of all paths in [t]. *)
-    val area : t -> float
+    (** {1 Boolean Operations} *)
 
     (** [boolean_op ?fill_rule ~op subjects clips]
 
@@ -445,17 +501,14 @@ module type S = sig
           regions covered by the [subjects] or [clips] polygons, but not both. *)
     val xor : ?fill_rule:fill_rule -> t -> t -> t
 
-    (** [bounds t]
-
-          Compute the axis-aligned bounding box that contains the paths [t]. *)
-    val bounds : t -> Rect.t
-
     (** [rect_clip ?closed r t]
 
           Intersect the paths [t] with the axis-aligned rectangle [r]. Paths are
           treated as closed/polygonal by default, but open paths may be clipped
           by setting [~closed:false]. *)
     val rect_clip : ?closed:bool -> Rect.t -> t -> t
+
+    (** {1 Offsetting} *)
 
     (** [inflate ?join_type ?end_type ~delta t]
 
@@ -476,23 +529,63 @@ module type S = sig
             unexpected results. *)
     val inflate : ?join_type:join_type -> ?end_type:end_type -> delta:float -> t -> t
 
-    (** [of_poly p]
+    (** {1 Path Simplification} *)
 
-          Create a paths from a polygon [p]. *)
-    val of_poly : poly -> t
+    (** [simplify ?closed ?eps t]
 
-    (** [of_polys ps]
+       Remove extraneous vertices from the paths [t] (similar to
+       {!ramer_douglas_peucker}). *)
+    val simplify : ?closed:bool -> ?eps:float -> t -> t
 
-          Create a paths from a list of polygons [ps]. *)
-    val of_polys : poly list -> t
+    (** [ramer_douglas_peucker ?eps t]
 
-    (** [to_polys ?fill_rule t]
+       Applies the
+       {{:https://en.wikipedia.org/wiki/Ramer%E2%80%93Douglas%E2%80%93Peucker_algorithm}
+       Ramer-Douglas-Peucker algorithm} to remove extraneous vertices from the
+       paths [t]. Put simply, vertices will be removed if they are less than
+       [eps] distance from imaginary lines passing through their adjacent vertices.
 
-          Extract a list of non-overlapping polygons from the set of paths [t].
-          This involves a clipper union operation tracking the parent-child
-          (outline-hole) relationships of the paths, thus [fill_rule] can be
-          provided to override the default rule if desired. *)
-    val to_polys : ?fill_rule:fill_rule -> t -> poly list
+       This function is particularly useful following offsetting (ie
+       inflating/shrinking paths). Offsetting often creates tiny segments that don't
+       improve path quality. Further these tiny segments create angles that are
+       strongly influenced by integer rounding. While these tiny segments are too
+       small to be noticeable following a single offset procedure, they're likely to
+       degrade the quality of subsequent offsets. And they'll also degrade
+       performance. Because of this, it is strongly recommended calling this function
+       after every polygon offset. *)
+    val ramer_douglas_peucker : ?eps:float -> t -> t
+
+    (** [strip_near_equal ?closed ?eps t]
+
+       Remove adjacent points that are less than [eps] distance apart from
+       their neighbour from the paths [t]. The path is treated as [closed] by
+       default. *)
+    val strip_near_equal : ?closed:bool -> ?eps:float -> t -> t
+
+    (** [strip_duplicates ?closed ?eps t]
+
+       Remove adjacent points that duplicate of their neighbours from the
+       paths [t]. The path is treated as [closed] by default. *)
+    val strip_duplicates : ?closed:bool -> t -> t
+
+    (** {1 Transformations} *)
+
+    (** [translate v t]
+
+       Translate the paths [t] along the vector [v]. *)
+    val translate : v -> t -> t
+
+    (** {1 Geometry} *)
+
+    (** [bounds t]
+
+          Compute the axis-aligned bounding box that contains the paths [t]. *)
+    val bounds : t -> Rect.t
+
+    (** [area t]
+
+       Compute the summed signed area of all paths in [t]. *)
+    val area : t -> float
   end
 end
 

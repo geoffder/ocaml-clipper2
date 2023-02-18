@@ -76,7 +76,7 @@ struct
     let intersects a b = C.Funcs.rectd_intersects a b
   end
 
-  module Path = struct
+  module Path0 = struct
     include PathD
 
     let[@inline] get_point t i = Point.to_v @@ C.Funcs.pathd_get_point t i
@@ -88,68 +88,6 @@ struct
       t
 
     let to_list t = List.init (length t) (get_point t)
-
-    let ellipse ?(fn = 0) ?centre wh =
-      let centre =
-        match centre with
-        | Some c -> Point.of_v c
-        | None -> Point.make 0. 0.
-      and buf, t = alloc () in
-      let _ = C.Funcs.pathd_ellipse buf centre (V.x wh *. 0.5) (V.y wh *. 0.5) fn in
-      t
-
-    let translate v t =
-      let buf, translated = alloc () in
-      let _ = C.Funcs.pathd_translate buf t (V.x v) (V.y v) in
-      translated
-
-    let bounds t =
-      let buf, rect = RectD.alloc () in
-      let _ = C.Funcs.pathd_bounds buf t in
-      rect
-
-    let rect_clip ?(closed = true) rect t =
-      let buf, paths = PathsD.alloc () in
-      let _ =
-        if closed
-        then C.Funcs.pathd_rect_clip buf rect t precision
-        else C.Funcs.pathd_rect_clip_line buf rect t precision
-      in
-      paths
-
-    let simplify ?(closed = true) ?(eps = eps) t =
-      let buf, simplified = alloc () in
-      let _ = C.Funcs.pathd_simplify buf t eps (not closed) in
-      simplified
-
-    let ramer_douglas_peucker ?(eps = eps) t =
-      let buf, rdp = alloc () in
-      let _ = C.Funcs.pathd_ramer_douglas_peucker buf t eps in
-      rdp
-
-    let strip_near_equal ?(closed = true) ?(eps = eps) t =
-      let buf, stripped = alloc () in
-      let _ = C.Funcs.pathd_strip_near_equal buf t eps closed in
-      stripped
-
-    let strip_duplicates ?(closed = true) t =
-      let buf, stripped = alloc () in
-      let _ = C.Funcs.pathd_strip_duplicates buf t closed in
-      stripped
-
-    let trim_collinear ?(closed = true) t =
-      let buf, trimmed = alloc () in
-      let _ = C.Funcs.pathd_trim_collinear buf t (not closed) precision in
-      trimmed
-
-    let point_inside t p =
-      match C.Funcs.pointd_in_path t (Point.of_v p) with
-      | IsOutside -> `Outside
-      | IsInside -> `Inside
-      | IsOn -> `OnBorder
-
-    let area t = C.Funcs.pathd_area t
-    let is_positive t = C.Funcs.pathd_is_positive t
   end
 
   module Paths = struct
@@ -159,7 +97,7 @@ struct
 
     let of_list paths =
       let t = make () in
-      List.iter (fun p -> add_path t (Path.of_list p)) paths;
+      List.iter (fun p -> add_path t (Path0.of_list p)) paths;
       t
 
     let to_list t =
@@ -265,8 +203,120 @@ struct
 
     let to_polys ?(fill_rule = fill_rule) t =
       let tree = boolean_op_tree ~fill_rule ~op:`Union t (make ()) in
-      let polys = PolyTreeD.decompose Path.to_list tree in
+      let polys = PolyTreeD.decompose Path0.to_list tree in
       List.map P.of_list polys
+  end
+
+  module Path = struct
+    include Path0
+
+    let ellipse ?(fn = 0) ?centre wh =
+      let centre =
+        match centre with
+        | Some c -> Point.of_v c
+        | None -> Point.make 0. 0.
+      and buf, t = alloc () in
+      let _ = C.Funcs.pathd_ellipse buf centre (V.x wh *. 0.5) (V.y wh *. 0.5) fn in
+      t
+
+    let translate v t =
+      let buf, translated = alloc () in
+      let _ = C.Funcs.pathd_translate buf t (V.x v) (V.y v) in
+      translated
+
+    let boolean_op ?fill_rule ~op a b =
+      let subjects = PathsD.make ()
+      and clips = PathsD.make () in
+      PathsD.add_path subjects a;
+      PathsD.add_path clips b;
+      Paths.boolean_op ?fill_rule ~op subjects clips
+
+    let intersect ?fill_rule a b =
+      let subjects = PathsD.make ()
+      and clips = PathsD.make () in
+      PathsD.add_path subjects a;
+      PathsD.add_path clips b;
+      Paths.intersect ?fill_rule subjects clips
+
+    let add ?fill_rule a b =
+      let subjects = PathsD.make () in
+      PathsD.add_path subjects a;
+      PathsD.add_path subjects b;
+      Paths.union ?fill_rule subjects
+
+    let union ?fill_rule ts =
+      let subjects = PathsD.make () in
+      List.iter (PathsD.add_path subjects) ts;
+      Paths.union ?fill_rule subjects
+
+    let difference ?fill_rule a b =
+      let subjects = PathsD.make ()
+      and clips = PathsD.make () in
+      PathsD.add_path subjects a;
+      PathsD.add_path clips b;
+      Paths.difference ?fill_rule subjects clips
+
+    let[@inline] sub ?fill_rule a b = difference ?fill_rule a b
+
+    let xor ?fill_rule a b =
+      let subjects = PathsD.make ()
+      and clips = PathsD.make () in
+      PathsD.add_path subjects a;
+      PathsD.add_path clips b;
+      Paths.xor ?fill_rule subjects clips
+
+    let bounds t =
+      let buf, rect = RectD.alloc () in
+      let _ = C.Funcs.pathd_bounds buf t in
+      rect
+
+    let rect_clip ?(closed = true) rect t =
+      let buf, paths = PathsD.alloc () in
+      let _ =
+        if closed
+        then C.Funcs.pathd_rect_clip buf rect t precision
+        else C.Funcs.pathd_rect_clip_line buf rect t precision
+      in
+      paths
+
+    let inflate ?join_type ?end_type ~delta t =
+      let subjects = PathsD.make () in
+      PathsD.add_path subjects t;
+      Paths.inflate ?join_type ?end_type ~delta subjects
+
+    let simplify ?(closed = true) ?(eps = eps) t =
+      let buf, simplified = alloc () in
+      let _ = C.Funcs.pathd_simplify buf t eps (not closed) in
+      simplified
+
+    let ramer_douglas_peucker ?(eps = eps) t =
+      let buf, rdp = alloc () in
+      let _ = C.Funcs.pathd_ramer_douglas_peucker buf t eps in
+      rdp
+
+    let strip_near_equal ?(closed = true) ?(eps = eps) t =
+      let buf, stripped = alloc () in
+      let _ = C.Funcs.pathd_strip_near_equal buf t eps closed in
+      stripped
+
+    let strip_duplicates ?(closed = true) t =
+      let buf, stripped = alloc () in
+      let _ = C.Funcs.pathd_strip_duplicates buf t closed in
+      stripped
+
+    let trim_collinear ?(closed = true) t =
+      let buf, trimmed = alloc () in
+      let _ = C.Funcs.pathd_trim_collinear buf t (not closed) precision in
+      trimmed
+
+    let point_inside t p =
+      match C.Funcs.pointd_in_path t (Point.of_v p) with
+      | IsOutside -> `Outside
+      | IsInside -> `Inside
+      | IsOn -> `OnBorder
+
+    let area t = C.Funcs.pathd_area t
+    let is_positive t = C.Funcs.pathd_is_positive t
   end
 end
 
@@ -337,7 +387,7 @@ struct
     let intersects a b = C.Funcs.rect64_intersects a b
   end
 
-  module Path = struct
+  module Path0 = struct
     include Path64
 
     let get_point t i = Point.to_v @@ C.Funcs.path64_get_point t i
@@ -350,70 +400,6 @@ struct
 
     let to_list t =
       List.init (length t) (fun i -> Point.to_v @@ C.Funcs.path64_get_point t i)
-
-    let ellipse ?(fn = 0) ?centre wh =
-      let centre =
-        match centre with
-        | Some c -> Point.of_v c
-        | None -> Point.make (Int64.of_int 0) (Int64.of_int 0)
-      and buf, t = alloc ()
-      and rx = (Int64.to_float @@ V.x wh) *. 0.5
-      and ry = (Int64.to_float @@ V.y wh) *. 0.5 in
-      let _ = C.Funcs.path64_ellipse buf centre rx ry fn in
-      t
-
-    let translate v t =
-      let buf, translated = alloc () in
-      let _ = C.Funcs.path64_translate buf t (V.x v) (V.y v) in
-      translated
-
-    let bounds t =
-      let buf, rect = Rect64.alloc () in
-      let _ = C.Funcs.path64_bounds buf t in
-      rect
-
-    let rect_clip ?(closed = true) rect t =
-      let buf, paths = Paths64.alloc () in
-      let _ =
-        if closed
-        then C.Funcs.path64_rect_clip buf rect t
-        else C.Funcs.path64_rect_clip_line buf rect t
-      in
-      paths
-
-    let trim_collinear ?(closed = true) t =
-      let buf, trimmed = alloc () in
-      let _ = C.Funcs.path64_trim_collinear buf t (not closed) in
-      trimmed
-
-    let simplify ?(closed = true) ?(eps = eps) t =
-      let buf, simplified = alloc () in
-      let _ = C.Funcs.path64_simplify buf t eps (not closed) in
-      simplified
-
-    let ramer_douglas_peucker ?(eps = eps) t =
-      let buf, rdp = alloc () in
-      let _ = C.Funcs.path64_ramer_douglas_peucker buf t eps in
-      rdp
-
-    let strip_near_equal ?(closed = true) ?(eps = eps) t =
-      let buf, stripped = alloc () in
-      let _ = C.Funcs.path64_strip_near_equal buf t eps closed in
-      stripped
-
-    let strip_duplicates ?(closed = true) t =
-      let buf, stripped = alloc () in
-      let _ = C.Funcs.path64_strip_duplicates buf t closed in
-      stripped
-
-    let point_inside t p =
-      match C.Funcs.point64_in_path t (Point.of_v p) with
-      | IsOutside -> `Outside
-      | IsInside -> `Inside
-      | IsOn -> `OnBorder
-
-    let area t = C.Funcs.path64_area t
-    let is_positive t = C.Funcs.path64_is_positive t
   end
 
   module Paths = struct
@@ -428,7 +414,7 @@ struct
 
     let of_list paths =
       let t = make () in
-      List.iter (fun p -> add_path t (Path.of_list p)) paths;
+      List.iter (fun p -> add_path t (Path0.of_list p)) paths;
       t
 
     let to_list t =
@@ -527,8 +513,122 @@ struct
 
     let to_polys ?(fill_rule = fill_rule) t =
       let tree = boolean_op_tree ~fill_rule ~op:`Union t (make ()) in
-      let polys = PolyTree64.decompose Path.to_list tree in
+      let polys = PolyTree64.decompose Path0.to_list tree in
       List.map P.of_list polys
+  end
+
+  module Path = struct
+    include Path0
+
+    let ellipse ?(fn = 0) ?centre wh =
+      let centre =
+        match centre with
+        | Some c -> Point.of_v c
+        | None -> Point.make (Int64.of_int 0) (Int64.of_int 0)
+      and buf, t = alloc ()
+      and rx = (Int64.to_float @@ V.x wh) *. 0.5
+      and ry = (Int64.to_float @@ V.y wh) *. 0.5 in
+      let _ = C.Funcs.path64_ellipse buf centre rx ry fn in
+      t
+
+    let translate v t =
+      let buf, translated = alloc () in
+      let _ = C.Funcs.path64_translate buf t (V.x v) (V.y v) in
+      translated
+
+    let boolean_op ?fill_rule ~op a b =
+      let subjects = Paths64.make ()
+      and clips = Paths64.make () in
+      Paths64.add_path subjects a;
+      Paths64.add_path clips b;
+      Paths.boolean_op ?fill_rule ~op subjects clips
+
+    let intersect ?fill_rule a b =
+      let subjects = Paths64.make ()
+      and clips = Paths64.make () in
+      Paths64.add_path subjects a;
+      Paths64.add_path clips b;
+      Paths.intersect ?fill_rule subjects clips
+
+    let add ?fill_rule a b =
+      let subjects = Paths64.make () in
+      Paths64.add_path subjects a;
+      Paths64.add_path subjects b;
+      Paths.union ?fill_rule subjects
+
+    let union ?fill_rule ts =
+      let subjects = Paths64.make () in
+      List.iter (Paths64.add_path subjects) ts;
+      Paths.union ?fill_rule subjects
+
+    let difference ?fill_rule a b =
+      let subjects = Paths64.make ()
+      and clips = Paths64.make () in
+      Paths64.add_path subjects a;
+      Paths64.add_path clips b;
+      Paths.difference ?fill_rule subjects clips
+
+    let[@inline] sub ?fill_rule a b = difference ?fill_rule a b
+
+    let xor ?fill_rule a b =
+      let subjects = Paths64.make ()
+      and clips = Paths64.make () in
+      Paths64.add_path subjects a;
+      Paths64.add_path clips b;
+      Paths.xor ?fill_rule subjects clips
+
+    let bounds t =
+      let buf, rect = Rect64.alloc () in
+      let _ = C.Funcs.path64_bounds buf t in
+      rect
+
+    let rect_clip ?(closed = true) rect t =
+      let buf, paths = Paths64.alloc () in
+      let _ =
+        if closed
+        then C.Funcs.path64_rect_clip buf rect t
+        else C.Funcs.path64_rect_clip_line buf rect t
+      in
+      paths
+
+    let inflate ?join_type ?end_type ~delta t =
+      let subjects = Paths64.make () in
+      Paths64.add_path subjects t;
+      Paths.inflate ?join_type ?end_type ~delta subjects
+
+    let trim_collinear ?(closed = true) t =
+      let buf, trimmed = alloc () in
+      let _ = C.Funcs.path64_trim_collinear buf t (not closed) in
+      trimmed
+
+    let simplify ?(closed = true) ?(eps = eps) t =
+      let buf, simplified = alloc () in
+      let _ = C.Funcs.path64_simplify buf t eps (not closed) in
+      simplified
+
+    let ramer_douglas_peucker ?(eps = eps) t =
+      let buf, rdp = alloc () in
+      let _ = C.Funcs.path64_ramer_douglas_peucker buf t eps in
+      rdp
+
+    let strip_near_equal ?(closed = true) ?(eps = eps) t =
+      let buf, stripped = alloc () in
+      let _ = C.Funcs.path64_strip_near_equal buf t eps closed in
+      stripped
+
+    let strip_duplicates ?(closed = true) t =
+      let buf, stripped = alloc () in
+      let _ = C.Funcs.path64_strip_duplicates buf t closed in
+      stripped
+
+    let point_inside t p =
+      match C.Funcs.point64_in_path t (Point.of_v p) with
+      | IsOutside -> `Outside
+      | IsInside -> `Inside
+      | IsOn -> `OnBorder
+
+    let area t = C.Funcs.path64_area t
+    let is_positive t = C.Funcs.path64_is_positive t
   end
 end
 
