@@ -131,16 +131,17 @@ module type S = sig
   (** polygon type -- outer path and zero or more inner paths (holes) *)
   type poly
 
-  type cpath
-  type cpaths
-
   include module type of ConfigTypes
 
-  type ('cpp, 'list) t =
-    | Path : cpath -> ([ `Path ], v list) t
-    | Paths : cpaths -> ([ `Paths ], v list list) t
+  (** Clipper2 paths and polygons
 
-  (** The Clipper2 Path type (std::vector of point) *)
+      This GADT abstracts over the Clipper2 Path and Paths types in order to
+      avoid splitting the interface into two largely duplicated modules. The
+      ['list] parameter specifies the corresponding OCaml type from which it can
+      be constructed from, or destructed to. *)
+  type ('cpp, 'list) t
+
+  (** The Clipper2 path type (std::vector of point) *)
   type path = ([ `Path ], v list) t
 
   (** The Clipper2 paths type (std::vector of path)
@@ -151,7 +152,9 @@ module type S = sig
   type paths = ([ `Paths ], v list list) t
 
   module Rect : sig
-    (** an axis-aligned rectangle (Clipper2 class) *)
+    (** An axis-aligned rectangle used bounding box computations and quick
+          rectangular clipping (boolean intersection) operations. (see {!val:rect_clip}) *)
+
     type t
 
     (** {1 Construction / Conversion} *)
@@ -222,13 +225,18 @@ module type S = sig
 
   (** [of_list ps]
 
-       Create a path (or paths) from the list(s) of 2d points [ps]. *)
-  val of_list : 'list -> (_, 'list) t
+       Create a path from the list of 2d points [ps]. *)
+  val path : v list -> path
+
+  (** [of_lists ps]
+
+       Create a path from the list of lists of 2d points [ps]. *)
+  val paths : v list list -> paths
 
   (** [to_list t]
 
        Convert the path (or paths) [t] to a list(s) of 2d points. *)
-  val to_list : 'list -> (_, 'list) t
+  val to_list : (_, 'list) t -> 'list
 
   (** [of_poly p]
 
@@ -239,6 +247,11 @@ module type S = sig
 
           Create a paths from a list of polygons [ps]. *)
   val of_polys : poly list -> paths
+
+  (** [to_poly t]
+
+       Create a polygon with the outline [t]. *)
+  val to_poly : path -> poly
 
   (** [to_polys ?fill_rule t]
 
@@ -258,42 +271,56 @@ module type S = sig
 
   (** {1 Access} *)
 
-  (** [length t]
+  (** [n_pts t]
 
-       Return the number of points in the path [t]. *)
-  val length : path -> int
+       Return the number of points in the path(s) [t]. *)
+  val n_pts : ('cpp, 'list) t -> int
 
-  (** [path_point t i]
+  (** [n_pts_sub t i]
+
+      Return the number of points in the [i]th sub-path of [t]. *)
+  val n_pts_sub : paths -> int -> int
+
+  (** [n_paths t]
+
+       Return the number of paths in [t]. *)
+  val n_paths : ('cpp, 'list) t -> int
+
+  (** [path_pt t i]
 
        Get the point at index [i] from the path [t]. *)
-  val path_point : path -> int -> v
+  val path_pt : path -> int -> v
 
-  (** [paths_point t i]
+  (** [paths_pt t i]
 
        Get the point at index [j] from the path at index [i] of [t]. *)
-  val paths_point : paths -> int -> int -> v
+  val paths_pt : paths -> int -> int -> v
 
+  (** [path.%(i)] gets the point at index [i] from [path]. *)
   val ( .%() ) : path -> int -> v
-  val ( .%{} ) : paths -> int -> int -> v
+
+  (** [paths.%(i, j)] gets the point at index [j] from the [i]th path in [paths]. *)
+  val ( .%{} ) : paths -> int * int -> v
 
   (** {1 Boolean Operations} *)
 
-  (** [boolean_op ?fill_rule ~op a b]
+  (** [boolean_op ?fill_rule ~op subjects clips]
 
-          Perform the boolean operation [op] with the specified [fill_rule]
-          on the polygons (closed paths) [a] and [b]. *)
+       Perform the boolean operation [op] with the specified [fill_rule]
+       on the polygons (closed paths) [subjects] and list of clipping
+       polygons [clips]. *)
   val boolean_op
     :  ?fill_rule:fill_rule
     -> op:clip_type
     -> ('cpp, 'list) t
-    -> ('cpp, 'list) t
+    -> ('cpp, 'list) t list
     -> paths
 
-  (** [intersect ?fill_rule a b]
+  (** [intersect ?fill_rule ts]
 
-          Intersect the polygons [a] and [b] according to [fill_rule]. The
-          result includes regions covered by both polygons. *)
-  val intersect : ?fill_rule:fill_rule -> ('cpp, 'list) t -> ('cpp, 'list) t -> paths
+          Intersect the list of polygons [ts] according to [fill_rule]. The
+          result includes regions covered by all polygons. *)
+  val intersect : ?fill_rule:fill_rule -> ('cpp, 'list) t list -> paths
 
   (** [union ?fill_rule subjects]
 
@@ -307,24 +334,28 @@ module type S = sig
           {!union} the polygon [a] and [b]. *)
   val add : ?fill_rule:fill_rule -> ('cpp, 'list) t -> ('cpp, 'list) t -> paths
 
-  (** [difference ?fill_rule a b]
+  (** [difference ?fill_rule subjects clips]
 
-          Difference the polygon [b] from the polygon [a] according to
-          [fill_rule]. The result includes the regions covered by the polygon [a],
-          but not the polygon [b]. *)
-  val difference : ?fill_rule:fill_rule -> ('cpp, 'list) t -> ('cpp, 'list) t -> paths
+          Difference the polygons [clips] from the polygon [subjects] according to
+          [fill_rule]. The result includes the regions covered by the polygon [subjects],
+          but not [clips]. *)
+  val difference
+    :  ?fill_rule:fill_rule
+    -> ('cpp, 'list) t
+    -> ('cpp, 'list) t list
+    -> paths
 
   (** [sub a b]
 
            Difference the polygon [b] from [a] (alias to {!difference}). *)
   val sub : ?fill_rule:fill_rule -> ('cpp, 'list) t -> ('cpp, 'list) t -> paths
 
-  (** [xor ?fill_rule subjects clips]
+  (** [xor ?fill_rule ts]
 
           Perform the exclusive-or boolean operation between the closed ps
           [a] and [b] according to [fill_rule]. The result includes
           regions covered by the either [a] or [b], but not both. *)
-  val xor : ?fill_rule:fill_rule -> ('cpp, 'list) t -> ('cpp, 'list) t -> paths
+  val xor : ?fill_rule:fill_rule -> ('cpp, 'list) t list -> paths
 
   (** [rect_clip ?closed r t]
 
@@ -365,14 +396,24 @@ module type S = sig
         Apply {{:https://en.wikipedia.org/wiki/Minkowski_addition} Minkowski
         addition} of the path [pattern] to the path [t]. [t] is treated
         as a [closed] polygon unless otherwise specified. *)
-  val minkowski_sum : ?closed:bool -> pattern:path -> ('cpp, 'list) t -> ('cpp, 'list) t
+  val minkowski_sum
+    :  ?closed:bool
+    -> ?fill_rule:fill_rule
+    -> pattern:path
+    -> ('cpp, 'list) t
+    -> ('cpp, 'list) t
 
   (** [minkowski_diff ?closed ~pattern t]
 
         Apply {{:https://en.wikipedia.org/wiki/Minkowski_addition} Minkowski
         subtraction} of the path [pattern] from the path [t]. [t] is treated
         as a [closed] polygon unless otherwise specified. *)
-  val minkowski_diff : ?closed:bool -> pattern:path -> ('cpp, 'list) t -> ('cpp, 'list) t
+  val minkowski_diff
+    :  ?closed:bool
+    -> ?fill_rule:fill_rule
+    -> pattern:path
+    -> ('cpp, 'list) t
+    -> ('cpp, 'list) t
 
   (** {1 Path Simplification} *)
 

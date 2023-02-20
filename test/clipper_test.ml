@@ -29,15 +29,15 @@ let%test "path" =
       let i = Float.of_int i in
       OCADml.v2 i i )
   in
-  let path = C.Path.of_list pts in
+  let path = C.path pts in
   Gc.full_major ();
-  List.for_all2 OCADml.V2.equal pts (C.Path.to_list path)
+  List.for_all2 OCADml.V2.equal pts (C.to_list path)
 
 let%test "tup_d" =
   let a = List.map OCADml.V2.to_tup OCADml.(Path2.square (v2 1. 1.)) in
   let b = List.map (fun (x, y) -> x +. 0.5, y +. 0.5) a in
-  let subjects = Ctup.Paths.of_list [ a; b ] in
-  ignore (Ctup.Paths.union subjects);
+  let subjects = Ctup.of_poly [ a; b ] in
+  ignore (Ctup.union [ subjects ]);
   true
 
 let%test "tup_64" =
@@ -45,7 +45,7 @@ let%test "tup_64" =
     List.map Int64.(fun (x, y) -> of_int x, of_int y) [ 0, 0; 10, 0; 10, 10; 0, 10 ]
   in
   let b = List.map Int64.(fun (x, y) -> add x (of_int 5), add y (of_int 5)) a in
-  ignore C64.Paths.(union @@ of_list [ a; b ]);
+  ignore C64.(union @@ [ path a; path b ]);
   true
 
 let%test "decomp" =
@@ -54,14 +54,9 @@ let%test "decomp" =
   and c2 = List.rev @@ Path2.circle ~fn:32 8.
   and c3 = Path2.circle ~fn:32 4.
   and c4 = List.rev @@ Path2.circle ~fn:32 2. in
-  let cs =
-    C.Paths.boolean_op
-      ~op:`Union
-      (C.Paths.of_list [ c1; c2; c3; c4 ])
-      (C.Paths.of_list [])
-  in
+  let cs = C.boolean_op ~op:`Union (C.paths [ c1; c2; c3; c4 ]) [] in
   let open OSCADml in
-  match C.Paths.to_polys cs with
+  match C.to_polys cs with
   | [ p1; p2 ] ->
     let s1 = Scad.of_poly2 p1
     and s2 = Scad.of_poly2 p2 in
