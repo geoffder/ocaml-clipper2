@@ -12,8 +12,12 @@ let config ?fill_rule ?join_type ?end_type ?precision ?eps () =
 
 module MakeD' (V : V with type n := float) (P : Poly with type v := V.t) (Conf : Config) =
 struct
-  type path = C.Types.PathD.t Ctypes_static.ptr
-  type paths = C.Types.PathsD.t Ctypes_static.ptr
+  type cpath = C.Types.PathD.t Ctypes_static.ptr
+  type cpaths = C.Types.PathsD.t Ctypes_static.ptr
+
+  type ('cpp, 'list) t =
+    | Path : cpath -> ([ `Path ], V.t list) t
+    | Paths : cpaths -> ([ `Paths ], V.t list list) t
 
   include ConfigTypes
 
@@ -90,244 +94,238 @@ struct
     let to_list t = List.init (length t) (get_point t)
   end
 
-  module Paths = struct
-    include PathsD
+  let[@inline] ( .%() ) (Path p) i = Point.to_v @@ C.Funcs.pathd_get_point p i
+  let[@inline] ( .%{} ) (Paths ps) (i, j) = Point.to_v @@ C.Funcs.pathsd_get_point ps i j
+  let[@inline] of_list vs = Path (Path0.of_list vs)
 
-    let[@inline] get_point t i j = Point.to_v @@ C.Funcs.pathsd_get_point t i j
+  let of_lists paths =
+    let c = PathsD.make () in
+    List.iter (fun p -> PathsD.add_path c (Path0.of_list p)) paths;
+    Paths c
 
-    let of_list paths =
-      let t = make () in
-      List.iter (fun p -> add_path t (Path0.of_list p)) paths;
-      t
-
-    let to_list t =
-      List.init (length t) (fun i ->
+  let to_list : type c l. (c, l) t -> l = function
+    | Path p -> Path0.to_list p
+    | Paths ps ->
+      List.init (PathsD.length ps) (fun i ->
         let len = Conv.size_to_int @@ C.Funcs.pathsd_path_length t i in
-        List.init len (fun j -> get_point t i j) )
+        List.init len (fun j -> Point.to_v @@ C.Funcs.pathsd_get_point ps i j) )
 
-    let translate v t =
-      let buf, translated = alloc () in
-      let _ = C.Funcs.pathsd_translate buf t (V.x v) (V.y v) in
-      translated
+  let ellipse ?(fn = 0) ?centre wh =
+    let centre =
+      match centre with
+      | Some c -> Point.of_v c
+      | None -> Point.make 0. 0.
+    and buf, p = PathD.alloc () in
+    let _ = C.Funcs.pathd_ellipse buf centre (V.x wh *. 0.5) (V.y wh *. 0.5) fn in
+    Path p
 
-    let boolean_op ?(fill_rule = fill_rule) ~op subjects clips =
-      let buf, t = alloc ()
-      and op = ClipType.make op
-      and fill_rule = FillRule.make fill_rule in
-      let _ = C.Funcs.pathsd_boolean_op buf op fill_rule subjects clips precision in
-      t
+  let translate (type c l) v (t : (c, l) t) : (c, l) t =
+    match t with
+    | Path p ->
+      let buf, translated = PathD.alloc () in
+      let _ = C.Funcs.pathd_translate buf p (V.x v) (V.y v) in
+      Path translated
+    | Paths ps ->
+      let buf, translated = PathsD.alloc () in
+      let _ = C.Funcs.pathsd_translate buf ps (V.x v) (V.y v) in
+      Paths translated
 
-    let boolean_op_tree ?(fill_rule = fill_rule) ~op subjects clips =
-      let tree = PolyTreeD.make ()
-      and op = ClipType.make op
-      and fill_rule = FillRule.make fill_rule in
-      let _ = C.Funcs.pathsd_boolean_op_tree op fill_rule subjects clips tree precision in
-      tree
+  let boolean_op
+    (type c l)
+    ?(fill_rule = fill_rule)
+    ~op
+    (subjects : (c, l) t)
+    (clips : (c, l) t list)
+    =
+    let buf, t = PathsD.alloc ()
+    and op = ClipType.make op
+    and fill_rule = FillRule.make fill_rule
+    and cs = PathsD.make () in
+    let ss =
+      match subjects with
+      | Path s ->
+        let ss = PathsD.make () in
+        List.iter (fun (Path p) -> PathsD.add_path cs p) clips;
+        PathsD.add_path ss s;
+        ss
+      | Paths ss ->
+        List.iter
+          (fun (Paths ps) ->
+            let len = PathsD.length ps in
+            for i = 0 to len - 1 do
+              PathsD.add_path cs (PathsD.get_path ps i)
+            done )
+          clips;
+        ss
+    in
+    let _ = C.Funcs.pathsd_boolean_op buf op fill_rule ss cs precision in
+    Paths t
 
-    let intersect ?(fill_rule = fill_rule) subjects clips =
-      let buf, t = alloc ()
-      and fill_rule = FillRule.make fill_rule in
-      let _ = C.Funcs.pathsd_intersect buf subjects clips fill_rule precision in
-      t
+  let boolean_op_tree
+    (type c l)
+    ?(fill_rule = fill_rule)
+    ~op
+    (subjects : (c, l) t)
+    (clips : (c, l) t list)
+    =
+    let tree = PolyTreeD.make ()
+    and op = ClipType.make op
+    and fill_rule = FillRule.make fill_rule
+    and cs = PathsD.make () in
+    let ss =
+      match subjects with
+      | Path s ->
+        let ss = PathsD.make () in
+        List.iter (fun (Path p) -> PathsD.add_path cs p) clips;
+        PathsD.add_path ss s;
+        ss
+      | Paths ss ->
+        List.iter
+          (fun (Paths ps) ->
+            let len = PathsD.length ps in
+            for i = 0 to len - 1 do
+              PathsD.add_path cs (PathsD.get_path ps i)
+            done )
+          clips;
+        ss
+    in
+    let _ = C.Funcs.pathsd_boolean_op_tree op fill_rule ss cs tree precision in
+    tree
 
-    let add ?(fill_rule = fill_rule) subjects clips =
-      let buf, t = alloc ()
-      and fill_rule = FillRule.make fill_rule in
-      let _ = C.Funcs.pathsd_union buf subjects clips fill_rule precision in
-      t
+  let intersect ?fill_rule subjects clips =
+    boolean_op ?fill_rule ~op:`Intersection subjects clips
 
-    let[@inline] union ?fill_rule subjects = add ?fill_rule subjects (make ())
+  let union ?fill_rule = function
+    | [] -> Paths (PathsD.make ())
+    | hd :: tl -> boolean_op ?fill_rule ~op:`Union hd tl
 
-    let difference ?(fill_rule = fill_rule) subjects clips =
-      let buf, t = alloc ()
-      and fill_rule = FillRule.make fill_rule in
-      let _ = C.Funcs.pathsd_difference buf subjects clips fill_rule precision in
-      t
+  let add ?fill_rule a b = boolean_op ?fill_rule ~op:`Union a [ b ]
 
-    let[@inline] sub ?fill_rule subjects clips = difference ?fill_rule subjects clips
+  let difference ?fill_rule subjects clips =
+    boolean_op ?fill_rule ~op:`Difference subjects clips
 
-    let xor ?(fill_rule = fill_rule) subjects clips =
-      let buf, t = alloc ()
-      and fill_rule = FillRule.make fill_rule in
-      let _ = C.Funcs.pathsd_xor buf subjects clips fill_rule precision in
-      t
+  let sub ?fill_rule a b = difference ?fill_rule a [ b ]
+  let xor ?fill_rule subjects clips = boolean_op ?fill_rule ~op:`Xor subjects clips
 
-    let bounds t =
-      let buf, rect = RectD.alloc () in
-      let _ = C.Funcs.pathsd_bounds buf t in
-      rect
+  let bounds (type c l) (t : (c, l) t) =
+    let buf, rect = RectD.alloc () in
+    let _ =
+      match t with
+      | Path p -> C.Funcs.pathd_bounds buf p
+      | Paths ps -> C.Funcs.pathsd_bounds buf ps
+    in
+    rect
 
-    let rect_clip ?(closed = true) rect t =
-      let buf, paths = PathsD.alloc () in
-      let _ =
-        if closed
-        then C.Funcs.pathsd_rect_clip buf rect t precision
-        else C.Funcs.pathsd_rect_clip_lines buf rect t precision
-      in
-      paths
+  let rect_clip (type c l) ?(closed = true) rect (t : (c, l) t) =
+    let buf, paths = PathsD.alloc () in
+    let _ =
+      match t, closed with
+      | Path p, true -> C.Funcs.pathd_rect_clip buf rect p precision
+      | Path p, false -> C.Funcs.pathd_rect_clip_line buf rect p precision
+      | Paths ps, true -> C.Funcs.pathsd_rect_clip buf rect ps precision
+      | Paths ps, false -> C.Funcs.pathsd_rect_clip_lines buf rect ps precision
+    in
+    paths
 
-    let inflate ?(join_type = join_type) ?(end_type = end_type) ~delta t =
-      let buf, inflated = alloc ()
-      and join_type, miter_limit = JoinType.make join_type
-      and end_type = EndType.make end_type in
-      let _ =
-        C.Funcs.pathsd_inflate buf t delta join_type end_type miter_limit precision
-      in
-      inflated
+  let inflate
+    (type c l)
+    ?(join_type = join_type)
+    ?(end_type = end_type)
+    ~delta
+    (t : (c, l) t)
+    =
+    let buf, inflated = PathsD.alloc ()
+    and join_type, miter_limit = JoinType.make join_type
+    and end_type = EndType.make end_type in
+    let ps =
+      match t with
+      | Path p ->
+        let ps = PathsD.make () in
+        PathsD.add_path ps p;
+        ps
+      | Paths ps -> ps
+    in
+    let _ =
+      C.Funcs.pathsd_inflate buf ps delta join_type end_type miter_limit precision
+    in
+    Paths inflated
 
-    let strip_near_equal ?(closed = true) ?(eps = eps) t =
-      let buf, stripped = alloc () in
-      let _ = C.Funcs.pathsd_strip_near_equal buf t eps closed in
-      stripped
+  let strip_near_equal (type c l) ?(closed = true) ?(eps = eps) (t : (c, l) t) : (c, l) t =
+    match t with
+    | Path p ->
+      let buf, stripped = PathD.alloc () in
+      let _ = C.Funcs.pathd_strip_near_equal buf p eps closed in
+      Path stripped
+    | Paths ps ->
+      let buf, stripped = PathsD.alloc () in
+      let _ = C.Funcs.pathsd_strip_near_equal buf ps eps closed in
+      Paths stripped
 
-    let strip_duplicates ?(closed = true) t =
-      let buf, stripped = alloc () in
-      let _ = C.Funcs.pathsd_strip_duplicates buf t closed in
-      stripped
+  let strip_duplicates (type c l) ?(closed = true) (t : (c, l) t) : (c, l) t =
+    match t with
+    | Path p ->
+      let buf, stripped = PathD.alloc () in
+      let _ = C.Funcs.pathd_strip_duplicates buf p closed in
+      Path stripped
+    | Paths ps ->
+      let buf, stripped = PathsD.alloc () in
+      let _ = C.Funcs.pathsd_strip_duplicates buf ps closed in
+      Paths stripped
 
-    let simplify ?(closed = true) ?(eps = eps) t =
-      let buf, simplified = alloc () in
-      let _ = C.Funcs.pathsd_simplify buf t eps (not closed) in
-      simplified
+  let simplify (type c l) ?(closed = true) ?(eps = eps) (t : (c, l) t) : (c, l) t =
+    match t with
+    | Path p ->
+      let buf, simplified = PathD.alloc () in
+      let _ = C.Funcs.pathd_simplify buf p eps closed in
+      Path simplified
+    | Paths ps ->
+      let buf, simplified = PathsD.alloc () in
+      let _ = C.Funcs.pathsd_simplify buf ps eps closed in
+      Paths simplified
 
-    let ramer_douglas_peucker ?(eps = eps) t =
-      let buf, rdp = alloc () in
-      let _ = C.Funcs.pathsd_ramer_douglas_peucker buf t eps in
-      rdp
+  let ramer_douglas_peucker (type c l) ?(eps = eps) (t : (c, l) t) : (c, l) t =
+    match t with
+    | Path p ->
+      let buf, rdp = PathD.alloc () in
+      let _ = C.Funcs.pathd_ramer_douglas_peucker buf p eps in
+      Path rdp
+    | Paths ps ->
+      let buf, rdp = PathsD.alloc () in
+      let _ = C.Funcs.pathsd_ramer_douglas_peucker buf ps eps in
+      Paths rdp
 
-    let area t = C.Funcs.pathsd_area t
-    let[@inline] of_poly p = of_list @@ P.to_list p
+  let area : type c l. (c, l) t -> float = function
+    | Path p -> C.Funcs.pathd_area p
+    | Paths ps -> C.Funcs.pathsd_area ps
 
-    let[@inline] of_polys ps =
-      of_list @@ List.fold_left (fun acc p -> List.rev_append (P.to_list p) acc) [] ps
+  let point_inside (Path path) p =
+    match C.Funcs.pointd_in_path path (Point.of_v p) with
+    | IsOutside -> `Outside
+    | IsInside -> `Inside
+    | IsOn -> `OnBorder
 
-    let to_polys ?(fill_rule = fill_rule) t =
-      let tree = boolean_op_tree ~fill_rule ~op:`Union t (make ()) in
-      let polys = PolyTreeD.decompose Path0.to_list tree in
-      List.map P.of_list polys
-  end
+  let is_positive (Path p) = C.Funcs.pathd_is_positive p
+  let of_poly p = of_lists @@ P.to_list p
 
-  module Path = struct
-    include Path0
+  let[@inline] of_polys ps =
+    of_lists @@ List.fold_left (fun acc p -> List.rev_append (P.to_list p) acc) [] ps
 
-    let ellipse ?(fn = 0) ?centre wh =
-      let centre =
-        match centre with
-        | Some c -> Point.of_v c
-        | None -> Point.make 0. 0.
-      and buf, t = alloc () in
-      let _ = C.Funcs.pathd_ellipse buf centre (V.x wh *. 0.5) (V.y wh *. 0.5) fn in
-      t
+  let to_poly (Path p) = P.of_list [ Path0.to_list p ]
 
-    let translate v t =
-      let buf, translated = alloc () in
-      let _ = C.Funcs.pathd_translate buf t (V.x v) (V.y v) in
-      translated
+  let to_polys ?(fill_rule = fill_rule) t =
+    let tree = boolean_op_tree ~fill_rule ~op:`Union t [] in
+    let polys = PolyTreeD.decompose Path0.to_list tree in
+    List.map P.of_list polys
 
-    let boolean_op ?fill_rule ~op a b =
-      let subjects = PathsD.make ()
-      and clips = PathsD.make () in
-      PathsD.add_path subjects a;
-      PathsD.add_path clips b;
-      Paths.boolean_op ?fill_rule ~op subjects clips
+  let minkowski_sum ?(closed = true) ~pattern (Path p) =
+    let buf, summed = PathD.alloc () in
+    let _ = C.Funcs.pathd_minkowski_sum buf pattern p closed precision in
+    Path summed
 
-    let intersect ?fill_rule a b =
-      let subjects = PathsD.make ()
-      and clips = PathsD.make () in
-      PathsD.add_path subjects a;
-      PathsD.add_path clips b;
-      Paths.intersect ?fill_rule subjects clips
-
-    let add ?fill_rule a b =
-      let subjects = PathsD.make () in
-      PathsD.add_path subjects a;
-      PathsD.add_path subjects b;
-      Paths.union ?fill_rule subjects
-
-    let union ?fill_rule ts =
-      let subjects = PathsD.make () in
-      List.iter (PathsD.add_path subjects) ts;
-      Paths.union ?fill_rule subjects
-
-    let difference ?fill_rule a b =
-      let subjects = PathsD.make ()
-      and clips = PathsD.make () in
-      PathsD.add_path subjects a;
-      PathsD.add_path clips b;
-      Paths.difference ?fill_rule subjects clips
-
-    let[@inline] sub ?fill_rule a b = difference ?fill_rule a b
-
-    let xor ?fill_rule a b =
-      let subjects = PathsD.make ()
-      and clips = PathsD.make () in
-      PathsD.add_path subjects a;
-      PathsD.add_path clips b;
-      Paths.xor ?fill_rule subjects clips
-
-    let bounds t =
-      let buf, rect = RectD.alloc () in
-      let _ = C.Funcs.pathd_bounds buf t in
-      rect
-
-    let rect_clip ?(closed = true) rect t =
-      let buf, paths = PathsD.alloc () in
-      let _ =
-        if closed
-        then C.Funcs.pathd_rect_clip buf rect t precision
-        else C.Funcs.pathd_rect_clip_line buf rect t precision
-      in
-      paths
-
-    let inflate ?join_type ?end_type ~delta t =
-      let subjects = PathsD.make () in
-      PathsD.add_path subjects t;
-      Paths.inflate ?join_type ?end_type ~delta subjects
-
-    let minkowski_sum ?(closed = true) ~pattern t =
-      let buf, summed = alloc () in
-      let _ = C.Funcs.pathd_minkowski_sum buf pattern t closed precision in
-      summed
-
-    let minkowski_diff ?(closed = true) ~pattern t =
-      let buf, diffed = alloc () in
-      let _ = C.Funcs.pathd_minkowski_diff buf pattern t closed precision in
-      diffed
-
-    let simplify ?(closed = true) ?(eps = eps) t =
-      let buf, simplified = alloc () in
-      let _ = C.Funcs.pathd_simplify buf t eps (not closed) in
-      simplified
-
-    let ramer_douglas_peucker ?(eps = eps) t =
-      let buf, rdp = alloc () in
-      let _ = C.Funcs.pathd_ramer_douglas_peucker buf t eps in
-      rdp
-
-    let strip_near_equal ?(closed = true) ?(eps = eps) t =
-      let buf, stripped = alloc () in
-      let _ = C.Funcs.pathd_strip_near_equal buf t eps closed in
-      stripped
-
-    let strip_duplicates ?(closed = true) t =
-      let buf, stripped = alloc () in
-      let _ = C.Funcs.pathd_strip_duplicates buf t closed in
-      stripped
-
-    let trim_collinear ?(closed = true) t =
-      let buf, trimmed = alloc () in
-      let _ = C.Funcs.pathd_trim_collinear buf t (not closed) precision in
-      trimmed
-
-    let point_inside t p =
-      match C.Funcs.pointd_in_path t (Point.of_v p) with
-      | IsOutside -> `Outside
-      | IsInside -> `Inside
-      | IsOn -> `OnBorder
-
-    let area t = C.Funcs.pathd_area t
-    let is_positive t = C.Funcs.pathd_is_positive t
-  end
+  let minkowski_diff ?(closed = true) ~pattern (Path p) =
+    let buf, diffed = PathD.alloc () in
+    let _ = C.Funcs.pathd_minkowski_diff buf pattern p closed precision in
+    Path diffed
 end
 
 module MakeD (V : V with type n := float) (Conf : Config) =
