@@ -317,15 +317,49 @@ struct
     let polys = PolyTreeD.decompose Path0.to_list tree in
     List.map P.of_list polys
 
-  let minkowski_sum ?(closed = true) ~pattern (Path p) =
-    let buf, summed = PathD.alloc () in
-    let _ = C.Funcs.pathd_minkowski_sum buf pattern p closed precision in
-    Path summed
+  (* let minkowski_sum ?(closed = true) ~pattern (Path p) = *)
+  (*   let buf, summed = PathD.alloc () in *)
+  (*   let _ = C.Funcs.pathd_minkowski_sum buf pattern p closed precision in *)
+  (*   Path summed *)
 
-  let minkowski_diff ?(closed = true) ~pattern (Path p) =
-    let buf, diffed = PathD.alloc () in
-    let _ = C.Funcs.pathd_minkowski_diff buf pattern p closed precision in
-    Path diffed
+  (* let minkowski_diff ?(closed = true) ~pattern (Path p) = *)
+  (*   let buf, diffed = PathD.alloc () in *)
+  (*   let _ = C.Funcs.pathd_minkowski_diff buf pattern p closed precision in *)
+  (*   Path diffed *)
+
+  let minkowski
+    (type c l)
+    ?(closed = true)
+    ?(fill_rule = fill_rule)
+    ~pattern
+    ~f
+    (t : (c, l) t)
+    : (c, l) t
+    =
+    match t with
+    | Path p ->
+      let buf, summed = PathD.alloc () in
+      let _ = f buf pattern p closed precision in
+      Path summed
+    | Paths ps ->
+      let summed = PathsD.make () in
+      let len = PathsD.length ps in
+      for i = 0 to len - 1 do
+        let buf, s = PathD.alloc () in
+        let p = PathsD.get_path summed i in
+        let _ = f buf pattern p closed precision in
+        PathsD.add_path summed s
+      done;
+      let buf, unioned = PathsD.alloc ()
+      and fill_rule = FillRule.make fill_rule in
+      let _ = C.Funcs.pathsd_union buf summed (PathsD.make ()) fill_rule precision in
+      Paths unioned
+
+  let minkowski_sum ?closed ?fill_rule ~pattern t =
+    minkowski ?closed ?fill_rule ~pattern ~f:C.Funcs.pathd_minkowski_sum t
+
+  let minkowski_diff ?closed ?fill_rule ~pattern t =
+    minkowski ?closed ?fill_rule ~pattern ~f:C.Funcs.pathd_minkowski_diff t
 end
 
 module MakeD (V : V with type n := float) (Conf : Config) =
