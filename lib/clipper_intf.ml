@@ -49,11 +49,11 @@ module type Poly = sig
   (** polygon type *)
   type t
 
-  (** [to_list t] converts the polygon [t] to a list of lists of points *)
-  val to_list : t -> v list list
+  (** [to_seq t] converts the polygon [t] to an iterator of iterators of points *)
+  val to_seq : t -> v Seq.t Seq.t
 
-  (** [of_list vs] creates a polygon from the list of lists of points [vs] *)
-  val of_list : v list list -> t
+  (** [of_seq vs] creates a polygon from the iterator of iterators of points [vs] *)
+  val of_seq : v Seq.t Seq.t -> t
 end
 
 module ConfigTypes = struct

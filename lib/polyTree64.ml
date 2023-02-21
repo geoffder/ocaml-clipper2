@@ -38,21 +38,21 @@ let polygon t =
   path
 
 let decompose to_vs t =
-  let polys = ref [] in
+  let polys = ref Seq.empty in
   let rec outer i t =
     let n_outlines = count t in
     if i < n_outlines
     then (
       let outline = child t i in
-      let holes = inner outline (count outline) 0 [] in
-      polys := (to_vs (polygon outline) :: holes) :: !polys;
+      let holes = inner outline (count outline) 0 Seq.empty in
+      polys := Seq.cons (Seq.cons (to_vs (polygon outline)) holes) !polys;
       if i < n_outlines - 1 then outer (i + 1) t else () )
   and inner outline n_holes j holes =
     if j < n_holes
     then (
       let c = child outline j in
       outer 0 c;
-      inner outline n_holes (j + 1) (to_vs (polygon c) :: holes) )
+      inner outline n_holes (j + 1) (Seq.cons (to_vs (polygon c)) holes) )
     else holes
   in
   outer 0 t;

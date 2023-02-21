@@ -104,11 +104,11 @@ struct
     | Paths ps -> PathsD.length ps
 
   let[@inline] cpath_get_point t i = Point.to_v @@ C.Funcs.pathd_get_point t i
-  let cpath_to_list t = List.init (PathD.length t) (cpath_get_point t)
+  let cpath_to_seq c = Seq.init (PathD.length c) (cpath_get_point c)
 
-  let cpath_of_list vs =
+  let cpath_of_seq vs =
     let t = PathD.make () in
-    List.iter (fun v -> C.Funcs.pathd_add_point t (Point.of_v v)) vs;
+    Seq.iter (fun v -> C.Funcs.pathd_add_point t (Point.of_v v)) vs;
     t
 
   let cpath_to_contour t = Ctr.of_seq @@ Seq.init (PathD.length t) (cpath_get_point t)
@@ -365,21 +365,21 @@ struct
 
   let of_poly p =
     let c = PathsD.make () in
-    List.iter (fun p -> PathsD.add_path c (cpath_of_list p)) (P.to_list p);
+    Seq.iter (fun p -> PathsD.add_path c (cpath_of_seq p)) (P.to_seq p);
     Paths c
 
   let[@inline] of_polys ps =
     let c = PathsD.make () in
-    List.fold_left (fun acc p -> List.rev_append (P.to_list p) acc) [] ps
-    |> List.iter (fun p -> PathsD.add_path c (cpath_of_list p));
+    List.fold_left (fun acc p -> Seq.append (P.to_seq p) acc) Seq.empty ps
+    |> Seq.iter (fun p -> PathsD.add_path c (cpath_of_seq p));
     Paths c
 
-  let to_poly (Path p) = P.of_list [ cpath_to_list p ]
+  let to_poly (Path p) = P.of_seq (Seq.return @@ cpath_to_seq p)
 
   let to_polys ?(fill_rule = fill_rule) t =
     let tree = boolean_op_tree ~fill_rule ~op:`Union t [] in
-    let polys = PolyTreeD.decompose cpath_to_list tree in
-    List.map P.of_list polys
+    let polys = PolyTreeD.decompose cpath_to_seq tree in
+    List.of_seq @@ Seq.map P.of_seq polys
 
   let minkowski
     (type c l)
@@ -420,8 +420,8 @@ module MakeD (V : V with type n := float) (Conf : Config) =
     (struct
       type t = V.t list list
 
-      let to_list = Fun.id
-      let of_list = Fun.id
+      let of_seq s = List.of_seq @@ Seq.map List.of_seq s
+      let to_seq t = Seq.map List.to_seq @@ List.to_seq t
     end)
     (Conf)
 
@@ -509,14 +509,14 @@ struct
     | Paths ps -> Paths64.length ps
 
   let[@inline] cpath_get_point t i = Point.to_v @@ C.Funcs.path64_get_point t i
-  let cpath_to_list t = List.init (Path64.length t) (cpath_get_point t)
+  let cpath_to_seq c = Seq.init (Path64.length c) (cpath_get_point c)
 
-  let cpath_of_list vs =
+  let cpath_of_seq vs =
     let t = Path64.make () in
-    List.iter (fun v -> C.Funcs.path64_add_point t (Point.of_v v)) vs;
+    Seq.iter (fun v -> C.Funcs.path64_add_point t (Point.of_v v)) vs;
     t
 
-  let cpath_to_contour t = Ctr.of_seq @@ Seq.init (Path64.length t) (cpath_get_point t)
+  let cpath_to_contour c = Ctr.of_seq @@ cpath_to_seq c
 
   let cpath_of_contour vs =
     let t = Path64.make () in
@@ -770,21 +770,21 @@ struct
 
   let of_poly p =
     let c = Paths64.make () in
-    List.iter (fun p -> Paths64.add_path c (cpath_of_list p)) (P.to_list p);
+    Seq.iter (fun p -> Paths64.add_path c (cpath_of_seq p)) (P.to_seq p);
     Paths c
 
   let[@inline] of_polys ps =
     let c = Paths64.make () in
-    List.fold_left (fun acc p -> List.rev_append (P.to_list p) acc) [] ps
-    |> List.iter (fun p -> Paths64.add_path c (cpath_of_list p));
+    List.fold_left (fun acc p -> Seq.append (P.to_seq p) acc) Seq.empty ps
+    |> Seq.iter (fun p -> Paths64.add_path c (cpath_of_seq p));
     Paths c
 
-  let to_poly (Path p) = P.of_list [ cpath_to_list p ]
+  let to_poly (Path p) = P.of_seq (Seq.return @@ cpath_to_seq p)
 
   let to_polys ?(fill_rule = fill_rule) t =
     let tree = boolean_op_tree ~fill_rule ~op:`Union t [] in
-    let polys = PolyTree64.decompose cpath_to_list tree in
-    List.map P.of_list polys
+    let polys = PolyTree64.decompose cpath_to_seq tree in
+    List.of_seq @@ Seq.map P.of_seq polys
 
   let minkowski
     (type c l)
@@ -825,7 +825,7 @@ module Make64 (V : V with type n := int64) (Conf : Config) =
     (struct
       type t = V.t list list
 
-      let to_list = Fun.id
-      let of_list = Fun.id
+      let of_seq s = List.of_seq @@ Seq.map List.of_seq s
+      let to_seq t = Seq.map List.to_seq @@ List.to_seq t
     end)
     (Conf)

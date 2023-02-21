@@ -30,10 +30,8 @@ module C64 =
     (struct
       type t = (int64 * int64) array array
 
-      (* let of_seq s = Array.of_seq @@ Seq.map Array.of_seq s *)
-      (* let to_seq a = Seq.map Array.to_seq @@ Array.to_seq a *)
-      let of_list s = Array.of_list @@ List.map Array.of_list s
-      let to_list a = List.map Array.to_list @@ Array.to_list a
+      let of_seq s = Array.of_seq @@ Seq.map Array.of_seq s
+      let to_seq a = Seq.map Array.to_seq @@ Array.to_seq a
     end)
     ((val Clipper.config ()))
 
