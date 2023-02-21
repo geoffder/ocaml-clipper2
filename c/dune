@@ -1,5 +1,5 @@
 (library
- (name clipper_c)
+ (name c)
  (public_name clipper.c)
  (wrapped true)
  (libraries ctypes ctypes.foreign)
@@ -23,8 +23,8 @@
    (concurrency sequential)
    (instance Funcs)
    (functor Clipper_c_function_descriptions))
-  (generated_types Clipper_c_types)
-  (generated_entry_point C))
+  (generated_types Types)
+  (generated_entry_point C_))
  (foreign_archives clipper2c Clipper2))
 
 ; Build Clipper2c vendor

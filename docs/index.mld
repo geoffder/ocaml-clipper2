@@ -11,7 +11,7 @@ Clipper2} polygon clipping (C++) library.
 {1:api API}
 
 - {!module-Clipper} -- top level library interface
-- {!module-Clipper_c} -- direct C bindings
+- {!module-C} -- direct C bindings
 
 {2 Functor Parameters}
 

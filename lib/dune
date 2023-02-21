@@ -1,6 +1,4 @@
 (library
  (name clipper)
  (public_name clipper)
- (libraries ctypes.foreign clipper.c)
- (flags
-  (:standard -open Clipper_c)))
+ (libraries ctypes.foreign clipper.c))
