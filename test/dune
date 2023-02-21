@@ -1,6 +1,6 @@
 (library
  (name Clipper_test)
  (inline_tests)
- (libraries clipper OCADml OSCADml gg)
+ (libraries clipper OCADml gg)
  (preprocess
   (pps ppx_inline_test)))

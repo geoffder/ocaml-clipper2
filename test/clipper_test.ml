@@ -63,26 +63,3 @@ let%test "decomp" =
     and a2' = Poly2.area p2 in
     Math.approx ~eps:0.1 a1 a1' && Math.approx ~eps:0.1 a2 a2'
   | _ -> false
-
-(* TODO: make an example dir and move there (saving scads without hardpathing) *)
-let%test "minkowski" =
-  let open OCADml in
-  let open OSCADml in
-  let sq = Poly2.box ~center:true ~thickness:(v2 2. 2.) (v2 6. 6.)
-  and circ = Path2.circle ~fn:32 1. in
-  let a = Scad.of_mesh @@ Mesh.extrude ~height:1. sq
-  and b =
-    Scad.ztrans 3.
-    @@ Scad.extrude ~height:1.
-    @@ Scad.minkowski [ Scad.of_poly2 sq; Scad.of_path2 circ ]
-  and c =
-    C.of_poly sq
-    |> C.minkowski_sum ~pattern:(C.path circ)
-    |> C.to_polys
-    |> List.map Scad.of_poly2
-    |> Scad.union
-    |> Scad.extrude ~height:1.
-    |> Scad.ztrans (-3.)
-  in
-  Scad.to_file "/home/geoff/git/ocaml-clipper2/minkow.scad" (Scad.union [ a; b; c ]);
-  true
