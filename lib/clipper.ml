@@ -369,31 +369,18 @@ struct
     ~pattern:(Path pat)
     ~op
     (t : (c, l) t)
-    : (c, l) t
+    : paths
     =
-    let f =
-      match op with
-      | `Sum -> C.Funcs.pathd_minkowski_sum
-      | `Diff -> C.Funcs.pathd_minkowski_diff
+    let buf, mink = PathsD.alloc ()
+    and fr = FillRule.make fill_rule in
+    let _ =
+      match t, op with
+      | Path p, `Sum -> C.Funcs.pathd_minkowski_sum buf pat p closed precision
+      | Paths ps, `Sum -> C.Funcs.pathsd_minkowski_sum buf pat ps closed precision fr
+      | Path p, `Diff -> C.Funcs.pathd_minkowski_diff buf pat p closed precision
+      | Paths ps, `Diff -> C.Funcs.pathsd_minkowski_diff buf pat ps closed precision fr
     in
-    match t with
-    | Path p ->
-      let buf, summed = PathD.alloc () in
-      let _ = f buf pat p closed precision in
-      Path summed
-    | Paths ps ->
-      let summed = PathsD.make () in
-      let len = PathsD.length ps in
-      for i = 0 to len - 1 do
-        let buf, s = PathD.alloc () in
-        let p = PathsD.get_path summed i in
-        let _ = f buf pat p closed precision in
-        PathsD.add_path summed s
-      done;
-      let buf, unioned = PathsD.alloc ()
-      and fill_rule = FillRule.make fill_rule in
-      let _ = C.Funcs.pathsd_union buf summed (PathsD.make ()) fill_rule precision in
-      Paths unioned
+    Paths mink
 
   let minkowski_sum ?closed ?fill_rule ~pattern t =
     minkowski ?closed ?fill_rule ~pattern ~op:`Sum t
@@ -762,31 +749,18 @@ struct
     ~pattern:(Path pat)
     ~op
     (t : (c, l) t)
-    : (c, l) t
+    : paths
     =
-    let f =
-      match op with
-      | `Sum -> C.Funcs.path64_minkowski_sum
-      | `Diff -> C.Funcs.path64_minkowski_diff
+    let buf, mink = Paths64.alloc ()
+    and fr = FillRule.make fill_rule in
+    let _ =
+      match t, op with
+      | Path p, `Sum -> C.Funcs.path64_minkowski_sum buf pat p closed
+      | Paths ps, `Sum -> C.Funcs.paths64_minkowski_sum buf pat ps closed fr
+      | Path p, `Diff -> C.Funcs.path64_minkowski_diff buf pat p closed
+      | Paths ps, `Diff -> C.Funcs.paths64_minkowski_diff buf pat ps closed fr
     in
-    match t with
-    | Path p ->
-      let buf, summed = Path64.alloc () in
-      let _ = f buf pat p closed in
-      Path summed
-    | Paths ps ->
-      let summed = Paths64.make () in
-      let len = Paths64.length ps in
-      for i = 0 to len - 1 do
-        let buf, s = Path64.alloc () in
-        let p = Paths64.get_path summed i in
-        let _ = f buf pat p closed in
-        Paths64.add_path summed s
-      done;
-      let buf, unioned = Paths64.alloc ()
-      and fill_rule = FillRule.make fill_rule in
-      let _ = C.Funcs.paths64_union buf summed (Paths64.make ()) fill_rule in
-      Paths unioned
+    Paths mink
 
   let minkowski_sum ?closed ?fill_rule ~pattern t =
     minkowski ?closed ?fill_rule ~pattern ~op:`Sum t

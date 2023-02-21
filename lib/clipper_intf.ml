@@ -393,27 +393,27 @@ module type S = sig
 
   (** [minkowski_sum ?closed ~pattern t]
 
-        Apply {{:https://en.wikipedia.org/wiki/Minkowski_addition} Minkowski
-        addition} of the path [pattern] to the path [t]. [t] is treated
-        as a [closed] polygon unless otherwise specified. *)
+      Apply {{:https://en.wikipedia.org/wiki/Minkowski_addition} Minkowski addition}
+      of the path [pattern] to the path(s) [t]. [t] is treated as a [closed]
+      polygon(s) unless otherwise specified. *)
   val minkowski_sum
     :  ?closed:bool
     -> ?fill_rule:fill_rule
     -> pattern:path
     -> ('cpp, 'list) t
-    -> ('cpp, 'list) t
+    -> paths
 
   (** [minkowski_diff ?closed ~pattern t]
 
-        Apply {{:https://en.wikipedia.org/wiki/Minkowski_addition} Minkowski
-        subtraction} of the path [pattern] from the path [t]. [t] is treated
-        as a [closed] polygon unless otherwise specified. *)
+        Apply {{:https://en.wikipedia.org/wiki/Minkowski_addition} Minkowski subtraction}
+        of the path [pattern] from the path(s) [t]. [t] is treated as a [closed]
+        polygon(s) unless otherwise specified. *)
   val minkowski_diff
     :  ?closed:bool
     -> ?fill_rule:fill_rule
     -> pattern:path
     -> ('cpp, 'list) t
-    -> ('cpp, 'list) t
+    -> paths
 
   (** {1 Path Simplification} *)
 

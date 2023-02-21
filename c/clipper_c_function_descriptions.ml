@@ -470,6 +470,48 @@ module Functions (F : Ctypes.FOREIGN) = struct
       @-> int
       @-> returning (ptr PathsD.t) )
 
+  let paths64_minkowski_sum =
+    foreign
+      "clipper_paths64_minkowski_sum"
+      ( ptr void
+      @-> ptr Path64.t
+      @-> ptr Paths64.t
+      @-> bool
+      @-> FillRule.t
+      @-> returning (ptr Paths64.t) )
+
+  let pathsd_minkowski_sum =
+    foreign
+      "clipper_pathsd_minkowski_sum"
+      ( ptr void
+      @-> ptr PathD.t
+      @-> ptr PathsD.t
+      @-> bool
+      @-> int
+      @-> FillRule.t
+      @-> returning (ptr PathsD.t) )
+
+  let paths64_minkowski_diff =
+    foreign
+      "clipper_paths64_minkowski_diff"
+      ( ptr void
+      @-> ptr Path64.t
+      @-> ptr Paths64.t
+      @-> bool
+      @-> FillRule.t
+      @-> returning (ptr Paths64.t) )
+
+  let pathsd_minkowski_diff =
+    foreign
+      "clipper_pathsd_minkowski_diff"
+      ( ptr void
+      @-> ptr PathD.t
+      @-> ptr PathsD.t
+      @-> bool
+      @-> int
+      @-> FillRule.t
+      @-> returning (ptr PathsD.t) )
+
   (* Geometry *)
 
   let point64_distance =
