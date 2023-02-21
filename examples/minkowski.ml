@@ -10,8 +10,7 @@ let () =
     |> Scad.extrude ~height:1.
     |> Scad.ztrans 3.
   and c =
-    C.of_poly sq
-    |> C.minkowski_sum ~pattern:(C.path circ)
+    C.minkowski_sum ~pattern:(C.path circ) (C.of_poly sq)
     |> C.to_polys
     |> List.map Scad.of_poly2
     |> Scad.union
