@@ -1,0 +1,4 @@
+(library
+ (name thin)
+ (public_name clipper.thin)
+ (libraries ctypes.foreign clipper.c))
