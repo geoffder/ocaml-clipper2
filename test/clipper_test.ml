@@ -1,4 +1,5 @@
-module C = Clipper.MakeD' (OCADml.V2) (OCADml.Poly2) ((val Clipper.config ()))
+module C =
+  Clipper.MakeD' (OCADml.V2) (OCADml.Path2) (OCADml.Poly2) ((val Clipper.config ()))
 
 module Ctup =
   Clipper.MakeD
@@ -12,13 +13,27 @@ module Ctup =
     ((val Clipper.config ()))
 
 module C64 =
-  Clipper.Make64
+  Clipper.Make64'
     (struct
       type t = int64 * int64
 
       let v x y = x, y
       let x t = fst t
       let y t = snd t
+    end)
+    (struct
+      type t = (int64 * int64) array
+
+      let of_seq s = Array.of_seq s
+      let to_seq a = Array.to_seq a
+    end)
+    (struct
+      type t = (int64 * int64) array array
+
+      (* let of_seq s = Array.of_seq @@ Seq.map Array.of_seq s *)
+      (* let to_seq a = Seq.map Array.to_seq @@ Array.to_seq a *)
+      let of_list s = Array.of_list @@ List.map Array.of_list s
+      let to_list a = List.map Array.to_list @@ Array.to_list a
     end)
     ((val Clipper.config ()))
 
@@ -31,7 +46,7 @@ let%test "path" =
   in
   let path = C.path pts in
   Gc.full_major ();
-  List.for_all2 OCADml.V2.equal pts (C.to_list path)
+  List.for_all2 OCADml.V2.equal pts (C.contour path)
 
 let%test "tup_d" =
   let a = List.map OCADml.V2.to_tup OCADml.(Path2.square (v2 1. 1.)) in
@@ -42,9 +57,9 @@ let%test "tup_d" =
 
 let%test "tup_64" =
   let a =
-    List.map Int64.(fun (x, y) -> of_int x, of_int y) [ 0, 0; 10, 0; 10, 10; 0, 10 ]
+    Array.map Int64.(fun (x, y) -> of_int x, of_int y) [| 0, 0; 10, 0; 10, 10; 0, 10 |]
   in
-  let b = List.map Int64.(fun (x, y) -> add x (of_int 5), add y (of_int 5)) a in
+  let b = Array.map Int64.(fun (x, y) -> add x (of_int 5), add y (of_int 5)) a in
   ignore C64.(union @@ [ path a; path b ]);
   true
 

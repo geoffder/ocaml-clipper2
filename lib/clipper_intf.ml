@@ -19,6 +19,24 @@ module type V = sig
   val y : t -> n
 end
 
+module type Contour = sig
+  (** Signature of a contour type -- an open or closed path/sequence of points.
+       To be used for construction and destruction of the Clipper2 path type. *)
+
+  (** 2d vector type representing points -- will be destructed (type declaration
+       not required in user supplied module) *)
+  type v
+
+  (** contour type *)
+  type t
+
+  (** [to_seq t] converts the contour [t] to an iterator of points *)
+  val to_seq : t -> v Seq.t
+
+  (** [of_seq vs] creates a contour from an iterator points [vs] *)
+  val of_seq : v Seq.t -> t
+end
+
 module type Poly = sig
   (** Signature of a polygon type -- an outer path and zero or more inner paths
     (holes). To be used for construction and destruction of Clipper2 paths
@@ -128,6 +146,9 @@ module type S = sig
   (** 2d vector type representing points *)
   type v
 
+  (** contour -- path/sequence of points *)
+  type contour
+
   (** polygon type -- outer path and zero or more inner paths (holes) *)
   type poly
 
@@ -142,14 +163,14 @@ module type S = sig
   type ('cpp, 'list) t
 
   (** The Clipper2 path type (std::vector of point) *)
-  type path = ([ `Path ], v list) t
+  type path = ([ `Path ], contour) t
 
   (** The Clipper2 paths type (std::vector of path)
 
        These lists of contours are not organized hierarchically (by
        parent-child / outer-hole) relationships, and may include any number
        of open paths or polygons. *)
-  type paths = ([ `Paths ], v list list) t
+  type paths = ([ `Paths ], contour list) t
 
   module Rect : sig
     (** An axis-aligned rectangle used bounding box computations and quick
@@ -223,29 +244,29 @@ module type S = sig
 
   (** {1 Construction / Conversion} *)
 
-  (** [of_list ps]
+  (** [path ps]
 
        Create a path from the list of 2d points [ps]. *)
-  val path : v list -> path
+  val path : contour -> path
 
-  (** [of_lists ps]
+  (** [paths ps]
 
-       Create a path from the list of lists of 2d points [ps]. *)
-  val paths : v list list -> paths
+       Create paths from the list of lists of 2d points [ps]. *)
+  val paths : contour list -> paths
 
-  (** [to_list t]
+  (** [contour t]
 
-       Convert the path (or paths) [t] to a list(s) of 2d points. *)
-  val to_list : (_, 'list) t -> 'list
+       Convert the path (or paths) [t] to contour(s) of 2d points. *)
+  val contour : (_, 'contour) t -> 'contour
 
   (** [of_poly p]
 
-          Create a paths from a polygon [p]. *)
+       Create a paths from a polygon [p]. *)
   val of_poly : poly -> paths
 
   (** [of_polys ps]
 
-          Create a paths from a list of polygons [ps]. *)
+       Create a paths from a list of polygons [ps]. *)
   val of_polys : poly list -> paths
 
   (** [to_poly t]
@@ -547,33 +568,56 @@ module type Intf = sig
 
   (** {1 Functors} *)
 
-  (** [MakeD' (V) (P) (C)] creates a Clipper2 module with the 2d [float] vector
-       [V], the polygon type [P] (composed of [V.t]s, used for input/output), and a
-       user configuration (see {!config} for convenience constructor). *)
+  (** [MakeD' (V) (Ctr) (P) (Conf)] creates a Clipper2 module with the 2d [float] vector
+       [V], the contour [Ctr] and polygon [P] types (composed of [V.t]s, used
+       for input/output), and a user configuration (see {!config} for convenience
+       constructor). *)
   module MakeD' : functor
     (V : V with type n := float)
+    (Ctr : Contour with type v := V.t)
     (P : Poly with type v := V.t)
     (_ : Config)
-    -> S with type n := float and type v := V.t and type poly := P.t
+    ->
+    S
+      with type n := float
+       and type v := V.t
+       and type contour := Ctr.t
+       and type poly := P.t
 
   (** [MakeD (V) (C)] creates a Clipper2 module with the 2d [float] vector [V], and a user
        configuration (see {!config} for convenience constructor). Same as
-       {!MakeD'}, but the polygon type is preset to [V.t list list]. *)
+       {!MakeD'}, but the contour and polygon types is preset to use [list]. *)
   module MakeD : functor (V : V with type n := float) (_ : Config) ->
-    S with type n := float and type v := V.t and type poly := V.t list list
+    S
+      with type n := float
+       and type v := V.t
+       and type contour := V.t list
+       and type poly := V.t list list
 
-  (** [MakeD' (V) (P) (C)] creates a Clipper2 module with the 2d [int64] vector
-       [V], the polygon type [P] (composed of [V.t]s, used for input/output), and a
-       user configuration (see {!config} for convenience constructor). *)
+  (** [MakeD' (V) (Ctr) (P) (Conf)] creates a Clipper2 module with the 2d [int64] vector
+       [V], the contour [Ctr] and polygon [P] types (composed of [V.t]s, used
+       for input/output), and a user configuration (see {!config} for
+       convenience constructor). *)
   module Make64' : functor
     (V : V with type n := int64)
+    (Ctr : Contour with type v := V.t)
     (P : Poly with type v := V.t)
     (_ : Config)
-    -> S with type n := int64 and type v := V.t and type poly := P.t
+    ->
+    S
+      with type n := int64
+       and type v := V.t
+       and type contour := Ctr.t
+       and type poly := P.t
 
-  (** [MakeD (V) (C)] creates a Clipper2 module with the 2d [int64] vector [V], and a user
-       configuration (see {!config} for convenience constructor). Same as
-       {!MakeD'}, but the polygon type is preset to [V.t list list]. *)
+  (** [MakeD (V) (Conf)] creates a Clipper2 module with the 2d [int64]
+       vector [V], and a user configuration (see {!config} for convenience
+       constructor). Same as {!MakeD'}, but the contour and polygon type is preset
+       to use [list]. *)
   module Make64 : functor (V : V with type n := int64) (_ : Config) ->
-    S with type n := int64 and type v := V.t and type poly := V.t list list
+    S
+      with type n := int64
+       and type v := V.t
+       and type contour := V.t list
+       and type poly := V.t list list
 end

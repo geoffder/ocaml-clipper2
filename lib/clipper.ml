@@ -10,17 +10,21 @@ let config ?fill_rule ?join_type ?end_type ?precision ?eps () =
     let eps = eps
   end : Config )
 
-module MakeD' (V : V with type n := float) (P : Poly with type v := V.t) (Conf : Config) =
+module MakeD'
+  (V : V with type n := float)
+  (Ctr : Contour with type v := V.t)
+  (P : Poly with type v := V.t)
+  (Conf : Config) =
 struct
   type cpath = C.Types.PathD.t Ctypes_static.ptr
   type cpaths = C.Types.PathsD.t Ctypes_static.ptr
 
   type ('cpp, 'list) t =
-    | Path : cpath -> ([ `Path ], V.t list) t
-    | Paths : cpaths -> ([ `Paths ], V.t list list) t
+    | Path : cpath -> ([ `Path ], Ctr.t) t
+    | Paths : cpaths -> ([ `Paths ], Ctr.t list) t
 
-  type path = ([ `Path ], V.t list) t
-  type paths = ([ `Paths ], V.t list list) t
+  type path = ([ `Path ], Ctr.t) t
+  type paths = ([ `Paths ], Ctr.t list) t
 
   include ConfigTypes
 
@@ -107,6 +111,13 @@ struct
     List.iter (fun v -> C.Funcs.pathd_add_point t (Point.of_v v)) vs;
     t
 
+  let cpath_to_contour t = Ctr.of_seq @@ Seq.init (PathD.length t) (cpath_get_point t)
+
+  let cpath_of_contour vs =
+    let t = PathD.make () in
+    Seq.iter (fun v -> C.Funcs.pathd_add_point t (Point.of_v v)) (Ctr.to_seq vs);
+    t
+
   let path_pt (Path p) i =
     if i >= 0 && i < PathD.length p
     then cpath_get_point p i
@@ -119,19 +130,20 @@ struct
 
   let[@inline] ( .%() ) p i = path_pt p i
   let[@inline] ( .%{} ) ps (i, j) = paths_pt ps i j
-  let[@inline] path vs = Path (cpath_of_list vs)
+  let[@inline] path vs = Path (cpath_of_contour vs)
 
   let paths ps =
     let c = PathsD.make () in
-    List.iter (fun p -> PathsD.add_path c (cpath_of_list p)) ps;
+    List.iter (fun p -> PathsD.add_path c (cpath_of_contour p)) ps;
     Paths c
 
-  let to_list : type c l. (c, l) t -> l = function
-    | Path p -> cpath_to_list p
+  let contour : type c l. (c, l) t -> l = function
+    | Path p -> cpath_to_contour p
     | Paths ps ->
       List.init (PathsD.length ps) (fun i ->
         let len = Conv.size_to_int @@ C.Funcs.pathsd_path_length ps i in
-        List.init len (fun j -> Point.to_v @@ C.Funcs.pathsd_get_point ps i j) )
+        Ctr.of_seq
+        @@ Seq.init len (fun j -> Point.to_v @@ C.Funcs.pathsd_get_point ps i j) )
 
   let ellipse ?(fn = 0) ?centre wh =
     let centre =
@@ -350,10 +362,17 @@ struct
     | IsOn -> `OnBorder
 
   let is_positive (Path p) = C.Funcs.pathd_is_positive p
-  let of_poly p = paths @@ P.to_list p
+
+  let of_poly p =
+    let c = PathsD.make () in
+    List.iter (fun p -> PathsD.add_path c (cpath_of_list p)) (P.to_list p);
+    Paths c
 
   let[@inline] of_polys ps =
-    paths @@ List.fold_left (fun acc p -> List.rev_append (P.to_list p) acc) [] ps
+    let c = PathsD.make () in
+    List.fold_left (fun acc p -> List.rev_append (P.to_list p) acc) [] ps
+    |> List.iter (fun p -> PathsD.add_path c (cpath_of_list p));
+    Paths c
 
   let to_poly (Path p) = P.of_list [ cpath_to_list p ]
 
@@ -393,6 +412,12 @@ module MakeD (V : V with type n := float) (Conf : Config) =
   MakeD'
     (V)
     (struct
+      type t = V.t list
+
+      let of_seq s = List.of_seq s
+      let to_seq l = List.to_seq l
+    end)
+    (struct
       type t = V.t list list
 
       let to_list = Fun.id
@@ -400,17 +425,21 @@ module MakeD (V : V with type n := float) (Conf : Config) =
     end)
     (Conf)
 
-module Make64' (V : V with type n := int64) (P : Poly with type v := V.t) (Conf : Config) =
+module Make64'
+  (V : V with type n := int64)
+  (Ctr : Contour with type v := V.t)
+  (P : Poly with type v := V.t)
+  (Conf : Config) =
 struct
   type cpath = C.Types.Path64.t Ctypes_static.ptr
   type cpaths = C.Types.Paths64.t Ctypes_static.ptr
 
   type ('cpp, 'list) t =
-    | Path : cpath -> ([ `Path ], V.t list) t
-    | Paths : cpaths -> ([ `Paths ], V.t list list) t
+    | Path : cpath -> ([ `Path ], Ctr.t) t
+    | Paths : cpaths -> ([ `Paths ], Ctr.t list) t
 
-  type path = ([ `Path ], V.t list) t
-  type paths = ([ `Paths ], V.t list list) t
+  type path = ([ `Path ], Ctr.t) t
+  type paths = ([ `Paths ], Ctr.t list) t
 
   include ConfigTypes
 
@@ -487,6 +516,13 @@ struct
     List.iter (fun v -> C.Funcs.path64_add_point t (Point.of_v v)) vs;
     t
 
+  let cpath_to_contour t = Ctr.of_seq @@ Seq.init (Path64.length t) (cpath_get_point t)
+
+  let cpath_of_contour vs =
+    let t = Path64.make () in
+    Seq.iter (fun v -> C.Funcs.path64_add_point t (Point.of_v v)) (Ctr.to_seq vs);
+    t
+
   let path_pt (Path p) i =
     if i >= 0 && i < Path64.length p
     then cpath_get_point p i
@@ -499,19 +535,20 @@ struct
 
   let[@inline] ( .%() ) p i = path_pt p i
   let[@inline] ( .%{} ) ps (i, j) = paths_pt ps i j
-  let[@inline] path vs = Path (cpath_of_list vs)
+  let[@inline] path vs = Path (cpath_of_contour vs)
 
   let paths ps =
     let c = Paths64.make () in
-    List.iter (fun p -> Paths64.add_path c (cpath_of_list p)) ps;
+    List.iter (fun p -> Paths64.add_path c (cpath_of_contour p)) ps;
     Paths c
 
-  let to_list : type c l. (c, l) t -> l = function
-    | Path p -> cpath_to_list p
+  let contour : type c l. (c, l) t -> l = function
+    | Path p -> cpath_to_contour p
     | Paths ps ->
       List.init (Paths64.length ps) (fun i ->
         let len = Conv.size_to_int @@ C.Funcs.paths64_path_length ps i in
-        List.init len (fun j -> Point.to_v @@ C.Funcs.paths64_get_point ps i j) )
+        Ctr.of_seq
+        @@ Seq.init len (fun j -> Point.to_v @@ C.Funcs.paths64_get_point ps i j) )
 
   let ellipse ?(fn = 0) ?centre wh =
     let centre =
@@ -730,10 +767,17 @@ struct
     | IsOn -> `OnBorder
 
   let is_positive (Path p) = C.Funcs.path64_is_positive p
-  let of_poly p = paths @@ P.to_list p
+
+  let of_poly p =
+    let c = Paths64.make () in
+    List.iter (fun p -> Paths64.add_path c (cpath_of_list p)) (P.to_list p);
+    Paths c
 
   let[@inline] of_polys ps =
-    paths @@ List.fold_left (fun acc p -> List.rev_append (P.to_list p) acc) [] ps
+    let c = Paths64.make () in
+    List.fold_left (fun acc p -> List.rev_append (P.to_list p) acc) [] ps
+    |> List.iter (fun p -> Paths64.add_path c (cpath_of_list p));
+    Paths c
 
   let to_poly (Path p) = P.of_list [ cpath_to_list p ]
 
@@ -772,6 +816,12 @@ end
 module Make64 (V : V with type n := int64) (Conf : Config) =
   Make64'
     (V)
+    (struct
+      type t = V.t list
+
+      let of_seq s = List.of_seq s
+      let to_seq l = List.to_seq l
+    end)
     (struct
       type t = V.t list list
 
