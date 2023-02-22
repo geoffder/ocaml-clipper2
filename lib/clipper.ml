@@ -17,7 +17,7 @@ module MakeD'
   (P : Poly with type v := V.t)
   (Conf : Config) =
 struct
-  type ('cpp, 'list) t =
+  type ('cpp, 'ctr) t =
     | Path : PathD.t -> ([ `Path ], Ctr.t) t
     | Paths : PathsD.t -> ([ `Paths ], Ctr.t list) t
 
@@ -123,6 +123,26 @@ struct
     match t with
     | Path p -> Path (PathD.translate p (V.x v) (V.y v))
     | Paths ps -> Paths (PathsD.translate ps (V.x v) (V.y v))
+
+  let map (type c l) (f : V.t -> V.t) (t : (c, l) t) : (c, l) t =
+    let map f p =
+      let m = PathD.make ()
+      and len = PathD.length p in
+      for i = 0 to len - 1 do
+        let v = Point.to_v @@ PathD.unsafe_get p i in
+        PathD.add_point m (Point.of_v @@ f v)
+      done;
+      m
+    in
+    match t with
+    | Path p -> Path (map f p)
+    | Paths ps ->
+      let ms = PathsD.make ()
+      and len = PathsD.length ps in
+      for i = 0 to len - 1 do
+        PathsD.add_path ms (map f @@ PathsD.unsafe_subpath ps i)
+      done;
+      Paths ms
 
   let boolean_op
     (type c l)
@@ -329,7 +349,7 @@ module Make64'
   (P : Poly with type v := V.t)
   (Conf : Config) =
 struct
-  type ('cpp, 'list) t =
+  type ('cpp, 'ctr) t =
     | Path : Path64.t -> ([ `Path ], Ctr.t) t
     | Paths : Paths64.t -> ([ `Paths ], Ctr.t list) t
 
@@ -425,6 +445,26 @@ struct
     match t with
     | Path p -> Path (Path64.translate p (V.x v) (V.y v))
     | Paths ps -> Paths (Paths64.translate ps (V.x v) (V.y v))
+
+  let map (type c l) (f : V.t -> V.t) (t : (c, l) t) : (c, l) t =
+    let map f p =
+      let m = Path64.make ()
+      and len = Path64.length p in
+      for i = 0 to len - 1 do
+        let v = Point.to_v @@ Path64.unsafe_get p i in
+        Path64.add_point m (Point.of_v @@ f v)
+      done;
+      m
+    in
+    match t with
+    | Path p -> Path (map f p)
+    | Paths ps ->
+      let ms = Paths64.make ()
+      and len = Paths64.length ps in
+      for i = 0 to len - 1 do
+        Paths64.add_path ms (map f @@ Paths64.unsafe_subpath ps i)
+      done;
+      Paths ms
 
   let boolean_op
     (type c l)

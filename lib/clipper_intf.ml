@@ -158,9 +158,9 @@ module type S = sig
 
       This GADT abstracts over the Clipper2 Path and Paths types in order to
       avoid splitting the interface into two largely duplicated modules. The
-      ['list] parameter specifies the corresponding OCaml type from which it can
+      ['ctr] parameter specifies the corresponding OCaml type from which it can
       be constructed from, or destructed to. *)
-  type ('cpp, 'list) t
+  type ('cpp, 'ctr) t
 
   (** The Clipper2 path type (std::vector of point) *)
   type path = ([ `Path ], contour) t
@@ -280,7 +280,7 @@ module type S = sig
           This involves a clipper union operation tracking the parent-child
           (outline-hole) relationships of the paths, thus [fill_rule] can be
           provided to override the default rule if desired. *)
-  val to_polys : ?fill_rule:fill_rule -> ('cpp, 'list) t -> poly list
+  val to_polys : ?fill_rule:fill_rule -> ('cpp, 'ctr) t -> poly list
 
   (** [ellipse ?fn ?centre rs]
 
@@ -295,7 +295,7 @@ module type S = sig
   (** [n_pts t]
 
        Return the number of points in the path(s) [t]. *)
-  val n_pts : ('cpp, 'list) t -> int
+  val n_pts : ('cpp, 'ctr) t -> int
 
   (** [n_pts_sub t i]
 
@@ -305,7 +305,7 @@ module type S = sig
   (** [n_paths t]
 
        Return the number of paths in [t]. *)
-  val n_paths : ('cpp, 'list) t -> int
+  val n_paths : ('cpp, 'ctr) t -> int
 
   (** [subpath t i]
 
@@ -338,57 +338,53 @@ module type S = sig
   val boolean_op
     :  ?fill_rule:fill_rule
     -> op:clip_type
-    -> ('cpp, 'list) t
-    -> ('cpp, 'list) t list
+    -> ('cpp, 'ctr) t
+    -> ('cpp, 'ctr) t list
     -> paths
 
   (** [intersect ?fill_rule ts]
 
           Intersect the list of polygons [ts] according to [fill_rule]. The
           result includes regions covered by all polygons. *)
-  val intersect : ?fill_rule:fill_rule -> ('cpp, 'list) t list -> paths
+  val intersect : ?fill_rule:fill_rule -> ('cpp, 'ctr) t list -> paths
 
   (** [union ?fill_rule subjects]
 
           Union the polygons [subjects] according to [fill_rule]. The result
           includes the regions covered by any of the polygons contained in
           [subjects]. *)
-  val union : ?fill_rule:fill_rule -> ('cpp, 'list) t list -> paths
+  val union : ?fill_rule:fill_rule -> ('cpp, 'ctr) t list -> paths
 
   (** [add ?fill_rule a b]
 
           {!union} the polygon [a] and [b]. *)
-  val add : ?fill_rule:fill_rule -> ('cpp, 'list) t -> ('cpp, 'list) t -> paths
+  val add : ?fill_rule:fill_rule -> ('cpp, 'ctr) t -> ('cpp, 'ctr) t -> paths
 
   (** [difference ?fill_rule subjects clips]
 
           Difference the polygons [clips] from the polygon [subjects] according to
           [fill_rule]. The result includes the regions covered by the polygon [subjects],
           but not [clips]. *)
-  val difference
-    :  ?fill_rule:fill_rule
-    -> ('cpp, 'list) t
-    -> ('cpp, 'list) t list
-    -> paths
+  val difference : ?fill_rule:fill_rule -> ('cpp, 'ctr) t -> ('cpp, 'ctr) t list -> paths
 
   (** [sub a b]
 
            Difference the polygon [b] from [a] (alias to {!difference}). *)
-  val sub : ?fill_rule:fill_rule -> ('cpp, 'list) t -> ('cpp, 'list) t -> paths
+  val sub : ?fill_rule:fill_rule -> ('cpp, 'ctr) t -> ('cpp, 'ctr) t -> paths
 
   (** [xor ?fill_rule ts]
 
           Perform the exclusive-or boolean operation between the closed ps
           [a] and [b] according to [fill_rule]. The result includes
           regions covered by the either [a] or [b], but not both. *)
-  val xor : ?fill_rule:fill_rule -> ('cpp, 'list) t list -> paths
+  val xor : ?fill_rule:fill_rule -> ('cpp, 'ctr) t list -> paths
 
   (** [rect_clip ?closed r t]
 
           Intersect the path [t] with the axis-aligned rectangle [r]. The path is
           treated as closed/polygonal by default, but an open path may be clipped
           by setting [~closed:false]. *)
-  val rect_clip : ?closed:bool -> Rect.t -> ('cpp, 'list) t -> paths
+  val rect_clip : ?closed:bool -> Rect.t -> ('cpp, 'ctr) t -> paths
 
   (** {1 Offsetting} *)
 
@@ -419,7 +415,7 @@ module type S = sig
     -> ?join_type:join_type
     -> ?end_type:end_type
     -> delta:float
-    -> ('cpp, 'list) t
+    -> ('cpp, 'ctr) t
     -> paths
 
   (** {1 Minkowski} *)
@@ -433,7 +429,7 @@ module type S = sig
     :  ?closed:bool
     -> ?fill_rule:fill_rule
     -> pattern:path
-    -> ('cpp, 'list) t
+    -> ('cpp, 'ctr) t
     -> paths
 
   (** [minkowski_diff ?closed ~pattern t]
@@ -445,7 +441,7 @@ module type S = sig
     :  ?closed:bool
     -> ?fill_rule:fill_rule
     -> pattern:path
-    -> ('cpp, 'list) t
+    -> ('cpp, 'ctr) t
     -> paths
 
   (** {1 Path Simplification} *)
@@ -454,7 +450,7 @@ module type S = sig
 
        Remove extraneous vertices from the path [t] (similar to
        {!ramer_douglas_peucker}). *)
-  val simplify : ?closed:bool -> ?eps:float -> ('cpp, 'list) t -> ('cpp, 'list) t
+  val simplify : ?closed:bool -> ?eps:float -> ('cpp, 'ctr) t -> ('cpp, 'ctr) t
 
   (** [ramer_douglas_peucker ?eps t]
 
@@ -472,46 +468,51 @@ module type S = sig
        degrade the quality of subsequent offsets. And they'll also degrade
        performance. Because of this, it is strongly recommended calling this function
        after every polygon offset. *)
-  val ramer_douglas_peucker : ?eps:float -> ('cpp, 'list) t -> ('cpp, 'list) t
+  val ramer_douglas_peucker : ?eps:float -> ('cpp, 'ctr) t -> ('cpp, 'ctr) t
 
   (** [trim_collinear ?closed t]
 
           Remove collinear points (that fall on a line drawn between their
           neighbours) from the path [t]. The path is treated as [closed] by
           default. *)
-  val trim_collinear : ?closed:bool -> ('cpp, 'list) t -> ('cpp, 'list) t
+  val trim_collinear : ?closed:bool -> ('cpp, 'ctr) t -> ('cpp, 'ctr) t
 
   (** [strip_near_equal ?closed ?eps t]
 
        Remove adjacent points that are less than [eps] distance apart from
        their neighbour from the paths [t]. The path is treated as [closed] by
        default. *)
-  val strip_near_equal : ?closed:bool -> ?eps:float -> ('cpp, 'list) t -> ('cpp, 'list) t
+  val strip_near_equal : ?closed:bool -> ?eps:float -> ('cpp, 'ctr) t -> ('cpp, 'ctr) t
 
   (** [strip_duplicates ?closed ?eps t]
 
        Remove adjacent points that duplicate of their neighbours from the
        paths [t]. The path is treated as [closed] by default. *)
-  val strip_duplicates : ?closed:bool -> ('cpp, 'list) t -> ('cpp, 'list) t
+  val strip_duplicates : ?closed:bool -> ('cpp, 'ctr) t -> ('cpp, 'ctr) t
 
   (** {1 Transformation} *)
 
   (** [translate v t]
 
        Translate the path [t] along the vector [v]. *)
-  val translate : v -> ('cpp, 'list) t -> ('cpp, 'list) t
+  val translate : v -> ('cpp, 'ctr) t -> ('cpp, 'ctr) t
+
+  (** [map f t]
+
+      Map over the points in [t] with the function [f]. *)
+  val map : (v -> v) -> ('cpp, 'ctr) t -> ('cpp, 'ctr) t
 
   (** {1 Geometry} *)
 
   (** [area t]
 
        Compute the signed area of the path [t]. *)
-  val area : ('cpp, 'list) t -> float
+  val area : ('cpp, 'ctr) t -> float
 
   (** [bounds t]
 
           Compute the axis-aligned bounding box that contains the path [t]. *)
-  val bounds : ('cpp, 'list) t -> Rect.t
+  val bounds : ('cpp, 'ctr) t -> Rect.t
 
   (** [is_positive t]
 
