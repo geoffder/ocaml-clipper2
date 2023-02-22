@@ -7,6 +7,7 @@ type path64 = C.Types.Path64.t Ctypes_static.ptr
 type paths64 = C.Types.Paths64.t Ctypes_static.ptr
 type polytree64 = C.Types.PolyTree64.t Ctypes_static.ptr
 
+include ConfigTypes
 module PointD = PointD
 module RectD = RectD
 module PathD = PathD

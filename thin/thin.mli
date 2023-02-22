@@ -1,3 +1,5 @@
+(**/**)
+
 type rectd
 type pathd
 type pathsd
@@ -7,24 +9,55 @@ type path64
 type paths64
 type polytree64
 
+(**/**)
+
+(** {1 Configuration Types} *)
+
+include module type of ConfigTypes
+
+(** {1 Decimal Interface} *)
+
 module PointD : sig
+  (** 2d points (float) *)
+
   type t
 
+  (** {1 Construction / Conversion} *)
+
   val make : float -> float -> t
+  val to_tup : t -> float * float
+
+  (** {1 Access} *)
+
   val x : t -> float
   val y : t -> float
 end
 
 module RectD : sig
+  (** An axis-aligned rectangle used bounding box computations and quick
+       rectangular clipping (boolean intersection) operations. (see
+       {!val:PathsD.rect_clip}) *)
+
   type t = rectd
+
+  (** {1 Construction and Conversion} *)
 
   val make : l:float -> t:float -> r:float -> b:float -> t
   val of_pts : PointD.t -> PointD.t -> t
+  val as_path : t -> pathd
+
+  (** {1 Access} *)
+
   val width : t -> float
   val height : t -> float
   val midpoint : t -> PointD.t
+
+  (** {1 Transformations} *)
+
   val scale : float -> t -> t
-  val as_path : t -> pathd
+
+  (** {1 Geometry} *)
+
   val contains_pt : t -> PointD.t -> bool
   val contains_rect : t -> t -> bool
   val is_empty : t -> bool
@@ -32,103 +65,126 @@ module RectD : sig
 end
 
 module PathD : sig
+  (** Rectangular clipping, simplification, and other transformations on
+       sequences of vertices (float) defining a single contour (open or closed
+       path). *)
+
+  (** the Clipper2 path type (std::vector of point) *)
   type t = pathd
 
+  (** {1 Construction} *)
+
   val make : unit -> t
-  val length : t -> int
-  val get_point : t -> int -> PointD.t
-  val add_point : t -> PointD.t -> unit
   val ellipse : ?fn:int -> ?centre:PointD.t -> float -> float -> t
+  val add_point : t -> PointD.t -> unit
+
+  (** {1 Access} *)
+
+  val length : t -> int
+  val unsafe_get : t -> int -> PointD.t
+  val get : t -> int -> PointD.t
+
+  (** {1 Transformation} *)
+
   val translate : t -> float -> float -> t
-  val bounds : t -> rectd
+
+  (** {1 Rectangular Clipping} *)
+
   val rect_clip : ?precision:int -> ?closed:bool -> t -> rectd -> pathsd
+
+  (** {1 Simplification} *)
+
   val trim_collinear : ?precision:int -> ?closed:bool -> t -> t
   val strip_near_equal : ?closed:bool -> ?eps:float -> t -> t
   val strip_duplicates : ?closed:bool -> t -> t
   val simplify : ?closed:bool -> ?eps:float -> t -> t
   val ramer_douglas_peucker : ?eps:float -> t -> t
-  val area : t -> float
-  val point_inside : t -> PointD.t -> [> `Inside | `OnBorder | `Outside ]
-  val is_positive : t -> bool
+
+  (** {1 Minkowski} *)
+
   val minkowski_sum : ?precision:int -> ?closed:bool -> pattern:t -> t -> pathsd
   val minkowski_diff : ?precision:int -> ?closed:bool -> pattern:t -> t -> pathsd
+
+  (** {1 Geometry} *)
+
+  val area : t -> float
+  val bounds : t -> rectd
+  val point_inside : t -> PointD.t -> [> `Inside | `OnBorder | `Outside ]
+  val is_positive : t -> bool
 end
 
 module PathsD : sig
+  (** Clipping (boolean), offseting, simplification, and minkowski operations on sequences
+       of {!PathD.t}. *)
+
+  (** The Clipper2 paths type (std::vector of path)
+
+       These lists of contours are not organized hierarchically (by
+       parent-child / outer-hole) relationships, and may include any number
+       of open paths or polygons. *)
   type t = pathsd
+
+  (** {1 Construction} *)
 
   val make : unit -> t
   val add_path : t -> PathD.t -> unit
+
+  (** {1 Access} *)
+
   val length : t -> int
-  val path_length : t -> int -> int
-  val get_path : t -> int -> PathD.t
-  val get_point : t -> int -> int -> PointD.t
+  val get : t -> int -> int -> PointD.t
+  val sublength : t -> int -> int
+  val subpath : t -> int -> PathD.t
+  val unsafe_sublength : t -> int -> int
+  val unsafe_subpath : t -> int -> PathD.t
+  val unsafe_get : t -> int -> int -> PointD.t
+
+  (** {1 Transformation}*)
+
   val translate : t -> float -> float -> t
 
-  val boolean_op
-    :  ?fill_rule:[< `EvenOdd | `Negative | `NonZero | `Positive > `NonZero ]
-    -> ?precision:int
-    -> op:[< `Difference | `Intersection | `None | `Union | `Xor ]
-    -> t
-    -> t
-    -> t
+  (** {1 Clipping (Boolean) Operations} *)
+
+  val boolean_op : ?fill_rule:fill_rule -> ?precision:int -> op:clip_type -> t -> t -> t
 
   val boolean_op_tree
-    :  ?fill_rule:[< `EvenOdd | `Negative | `NonZero | `Positive > `NonZero ]
+    :  ?fill_rule:fill_rule
     -> ?precision:int
-    -> op:[< `Difference | `Intersection | `None | `Union | `Xor ]
+    -> op:clip_type
     -> t
     -> t
     -> polytreed
 
-  val intersect
-    :  ?fill_rule:[< `EvenOdd | `Negative | `NonZero | `Positive > `NonZero ]
-    -> ?precision:int
-    -> t
-    -> t
-    -> t
-
-  val union
-    :  ?fill_rule:[< `EvenOdd | `Negative | `NonZero | `Positive > `NonZero ]
-    -> ?precision:int
-    -> t
-    -> t
-
-  val difference
-    :  ?fill_rule:[< `EvenOdd | `Negative | `NonZero | `Positive > `NonZero ]
-    -> ?precision:int
-    -> t
-    -> t
-    -> t
-
-  val xor
-    :  ?fill_rule:[< `EvenOdd | `Negative | `NonZero | `Positive > `NonZero ]
-    -> ?precision:int
-    -> t
-    -> t
-    -> t
-
-  val bounds : t -> rectd
+  val intersect : ?fill_rule:fill_rule -> ?precision:int -> t -> t -> t
+  val union : ?fill_rule:fill_rule -> ?precision:int -> t -> t
+  val difference : ?fill_rule:fill_rule -> ?precision:int -> t -> t -> t
+  val xor : ?fill_rule:fill_rule -> ?precision:int -> t -> t -> t
   val rect_clip : ?precision:int -> ?closed:bool -> t -> RectD.t -> t
+
+  (** {1 Offsetting} *)
 
   val inflate
     :  ?precision:int
-    -> ?join_type:[< `Miter of float option | `Round | `Square > `Round ]
-    -> ?end_type:[< `Butt | `Joined | `Polygon | `Round | `Square > `Polygon ]
+    -> ?miter_limit:float
+    -> ?join_type:join_type
+    -> ?end_type:end_type
     -> delta:float
     -> t
     -> t
+
+  (** {1 Simplification} *)
 
   val strip_near_equal : ?closed:bool -> ?eps:float -> t -> t
   val strip_duplicates : ?closed:bool -> t -> t
   val simplify : ?closed:bool -> ?eps:float -> t -> t
   val ramer_douglas_peucker : ?eps:float -> t -> t
-  val area : t -> float
+
+  (** {1 Minkowski} *)
 
   val minkowski_sum
     :  ?precision:int
     -> ?closed:bool
-    -> ?fill_rule:[< `EvenOdd | `Negative | `NonZero | `Positive > `NonZero ]
+    -> ?fill_rule:fill_rule
     -> pattern:PathD.t
     -> t
     -> t
@@ -136,20 +192,44 @@ module PathsD : sig
   val minkowski_diff
     :  ?precision:int
     -> ?closed:bool
-    -> ?fill_rule:[< `EvenOdd | `Negative | `NonZero | `Positive > `NonZero ]
+    -> ?fill_rule:fill_rule
     -> pattern:PathD.t
     -> t
     -> t
+
+  (** {1 Geometry} *)
+
+  val area : t -> float
+  val bounds : t -> rectd
 end
 
 module PolyTreeD : sig
+  (** {!PolyTreeD.t} is a read-only data structure that receives solutions from
+       clipping operations. It's an alternative to the {!PathsD.t} data structure which
+       also receives solutions. However the principle advantage of {!PolyTreeD.t} over
+       {!PathsD.t} is that it also represents the parent-child relationships of the
+       polygons in the solution (where a parent's polygon will contain all its
+       children polygons).
+
+   The {!PolyTreeD.t} object that's to receive a clipping solution is passed as a
+   parameter to {!ClipperD.execute}. When the clipping operation finishes, this
+   object will be populated with data representing the clipped solution.
+
+   A {!PolyTreeD.t} object is a container for any number of {!PolyTreeD.t} child objects,
+   each representing a single polygon contour. The top-level descendents of a
+   {!PolyTreeD.t} solution will always be outer polygon contours. Children may
+   in turn contain their own children to any level of nesting. Children of outer
+   polygon contours will always represent holes, and children of holes will
+   always represent nested outer polygon contours.
+
+   {!PolyTreeD.t} will never contain open paths since open paths
+   can't contain paths. When clipping open paths, these will always be
+   represented in solutions via a separate {!PathsD.t} structure. *)
+
   type t = polytreed
 
   val make : ?parent:t -> unit -> t
   val clear : t -> unit
-  val set_inv_scale : t -> float -> unit
-  val inv_scale : t -> float
-  val add_child : t -> path64 -> t
   val parent : t -> t option
   val child : t -> int -> t
   val level : t -> int
@@ -161,6 +241,9 @@ module PolyTreeD : sig
 end
 
 module ClipperD : sig
+  (** Clipping (boolean) operations on float paths/polygons *)
+
+  (** the core class of Clipper2 (float edition) *)
   type t
 
   val make : ?precision:int -> unit -> t
@@ -169,17 +252,17 @@ module ClipperD : sig
   val add_clip : t -> PathsD.t -> unit
 
   val execute
-    :  ?fill_rule:[< `EvenOdd | `Negative | `NonZero | `Positive > `NonZero ]
+    :  ?fill_rule:fill_rule
     -> ?open_solution:PathsD.t
-    -> op:[< `Difference | `Intersection | `None | `Union | `Xor ]
+    -> op:clip_type
     -> solution:PathsD.t
     -> t
     -> (unit, string) result
 
   val execute_tree
-    :  ?fill_rule:[< `EvenOdd | `Negative | `NonZero | `Positive > `NonZero ]
+    :  ?fill_rule:fill_rule
     -> ?open_solution:PathsD.t
-    -> op:[< `Difference | `Intersection | `None | `Union | `Xor ]
+    -> op:clip_type
     -> solution:PolyTreeD.t
     -> t
     -> (unit, string) result
@@ -191,24 +274,49 @@ module ClipperD : sig
   val clear : t -> unit
 end
 
+(** {1 Int64 Interface} *)
+
 module Point64 : sig
+  (** 2d points (int64) *)
+
   type t
 
+  (** {1 Construction / Conversion} *)
+
   val make : int64 -> int64 -> t
+  val to_tup : t -> int64 * int64
+
+  (** {1 Access} *)
+
   val x : t -> int64
   val y : t -> int64
 end
 
 module Rect64 : sig
+  (** An axis-aligned rectangle used bounding box computations and quick
+       rectangular clipping (boolean intersection) operations. (see
+       {!val:Paths64.rect_clip}) *)
+
   type t = rect64
+
+  (** {1 Construction and Conversion} *)
 
   val make : l:int64 -> t:int64 -> r:int64 -> b:int64 -> t
   val of_pts : Point64.t -> Point64.t -> t
+  val as_path : t -> path64
+
+  (** {1 Access} *)
+
   val width : t -> int64
   val height : t -> int64
   val midpoint : t -> Point64.t
+
+  (** {1 Transformations} *)
+
   val scale : float -> t -> t
-  val as_path : t -> path64
+
+  (** {1 Geometry} *)
+
   val contains_pt : t -> Point64.t -> bool
   val contains_rect : t -> t -> bool
   val is_empty : t -> bool
@@ -216,113 +324,149 @@ module Rect64 : sig
 end
 
 module Path64 : sig
+  (** Rectangular clipping, simplification, and other transformations on
+       sequences of vertices (int64) defining a single contour (open or closed
+       path). *)
+
+  (** the Clipper2 path type (std::vector of point) *)
   type t = path64
 
+  (** {1 Construction} *)
+
   val make : unit -> t
-  val length : t -> int
-  val get_point : t -> int -> Point64.t
-  val add_point : t -> Point64.t -> unit
   val ellipse : ?fn:int -> ?centre:Point64.t -> int64 -> int64 -> t
+  val add_point : t -> Point64.t -> unit
+
+  (** {1 Access} *)
+
+  val length : t -> int
+  val unsafe_get : t -> int -> Point64.t
+  val get : t -> int -> Point64.t
+
+  (** {1 Transformation} *)
+
   val translate : t -> int64 -> int64 -> t
+
+  (** {1 Rectangular Clipping} *)
+
   val bounds : t -> rect64
   val rect_clip : ?closed:bool -> t -> rect64 -> paths64
+
+  (** {1 Simplification} *)
+
   val trim_collinear : ?closed:bool -> t -> t
   val strip_near_equal : ?closed:bool -> ?eps:float -> t -> t
   val strip_duplicates : ?closed:bool -> t -> t
   val simplify : ?closed:bool -> ?eps:float -> t -> t
   val ramer_douglas_peucker : ?eps:float -> t -> t
+
+  (** {1 Minkowski} *)
+
+  val minkowski_sum : ?closed:bool -> pattern:t -> t -> paths64
+  val minkowski_diff : ?closed:bool -> pattern:t -> t -> paths64
+
+  (** {1 Geometry} *)
+
   val area : t -> float
   val point_inside : t -> Point64.t -> [> `Inside | `OnBorder | `Outside ]
   val is_positive : t -> bool
-  val minkowski_sum : ?closed:bool -> pattern:t -> t -> paths64
-  val minkowski_diff : ?closed:bool -> pattern:t -> t -> paths64
 end
 
 module Paths64 : sig
+  (** Clipping (boolean), offseting, simplification, and minkowski operations on sequences
+       of {!Path64.t} *)
+
+  (** The Clipper2 paths type (std::vector of path)
+
+       These lists of contours are not organized hierarchically (by
+       parent-child / outer-hole) relationships, and may include any number
+       of open paths or polygons. *)
   type t = paths64
+
+  (** {1 Construction} *)
 
   val make : unit -> t
   val add_path : t -> Path64.t -> unit
+
+  (** {1 Access} *)
+
   val length : t -> int
-  val path_length : t -> int -> int
-  val get_path : t -> int -> Path64.t
-  val get_point : t -> int -> int -> Point64.t
+  val get : t -> int -> int -> Point64.t
+  val sublength : t -> int -> int
+  val subpath : t -> int -> Path64.t
+  val unsafe_get : t -> int -> int -> Point64.t
+  val unsafe_sublength : t -> int -> int
+  val unsafe_subpath : t -> int -> Path64.t
+
+  (** {1 Transformations} *)
+
   val translate : t -> int64 -> int64 -> t
 
-  val boolean_op
-    :  ?fill_rule:[< `EvenOdd | `Negative | `NonZero | `Positive > `NonZero ]
-    -> op:[< `Difference | `Intersection | `None | `Union | `Xor ]
-    -> t
-    -> t
-    -> t
+  (** {1 Clipping (Boolean) Operations} *)
 
-  val boolean_op_tree
-    :  ?fill_rule:[< `EvenOdd | `Negative | `NonZero | `Positive > `NonZero ]
-    -> op:[< `Difference | `Intersection | `None | `Union | `Xor ]
-    -> t
-    -> t
-    -> polytree64
-
-  val intersect
-    :  ?fill_rule:[< `EvenOdd | `Negative | `NonZero | `Positive > `NonZero ]
-    -> t
-    -> t
-    -> t
-
-  val union
-    :  ?fill_rule:[< `EvenOdd | `Negative | `NonZero | `Positive > `NonZero ]
-    -> t
-    -> t
-
-  val difference
-    :  ?fill_rule:[< `EvenOdd | `Negative | `NonZero | `Positive > `NonZero ]
-    -> t
-    -> t
-    -> t
-
-  val xor
-    :  ?fill_rule:[< `EvenOdd | `Negative | `NonZero | `Positive > `NonZero ]
-    -> t
-    -> t
-    -> t
-
-  val bounds : t -> rect64
+  val boolean_op : ?fill_rule:fill_rule -> op:clip_type -> t -> t -> t
+  val boolean_op_tree : ?fill_rule:fill_rule -> op:clip_type -> t -> t -> polytree64
+  val intersect : ?fill_rule:fill_rule -> t -> t -> t
+  val union : ?fill_rule:fill_rule -> t -> t
+  val difference : ?fill_rule:fill_rule -> t -> t -> t
+  val xor : ?fill_rule:fill_rule -> t -> t -> t
   val rect_clip : ?closed:bool -> t -> Rect64.t -> t
 
+  (** {1 Offsetting} *)
+
   val inflate
-    :  ?join_type:[< `Miter of float option | `Round | `Square > `Round ]
-    -> ?end_type:[< `Butt | `Joined | `Polygon | `Round | `Square > `Polygon ]
+    :  ?miter_limit:float
+    -> ?join_type:join_type
+    -> ?end_type:end_type
     -> delta:float
     -> t
     -> t
+
+  (** {1 Simplification} *)
 
   val strip_near_equal : ?closed:bool -> ?eps:float -> t -> t
   val strip_duplicates : ?closed:bool -> t -> t
   val simplify : ?closed:bool -> ?eps:float -> t -> t
   val ramer_douglas_peucker : ?eps:float -> t -> t
+
+  (** {1 Minkowski} *)
+
+  val minkowski_sum : ?closed:bool -> ?fill_rule:fill_rule -> pattern:Path64.t -> t -> t
+  val minkowski_diff : ?closed:bool -> ?fill_rule:fill_rule -> pattern:Path64.t -> t -> t
+
+  (** {1 Geometry} *)
+
   val area : t -> float
-
-  val minkowski_sum
-    :  ?closed:bool
-    -> ?fill_rule:[< `EvenOdd | `Negative | `NonZero | `Positive > `NonZero ]
-    -> pattern:Path64.t
-    -> t
-    -> t
-
-  val minkowski_diff
-    :  ?closed:bool
-    -> ?fill_rule:[< `EvenOdd | `Negative | `NonZero | `Positive > `NonZero ]
-    -> pattern:Path64.t
-    -> t
-    -> t
+  val bounds : t -> rect64
 end
 
 module PolyTree64 : sig
+  (** {!PolyTree64.t} is a read-only data structure that receives solutions from
+       clipping operations. It's an alternative to the {!Paths64.t} data structure which
+       also receives solutions. However the principle advantage of {!PolyTree64.t} over
+       {!Paths64.t} is that it also represents the parent-child relationships of the
+       polygons in the solution (where a parent's polygon will contain all its
+       children polygons).
+
+   The {!PolyTree64.t} object that's to receive a clipping solution is passed as a
+   parameter to {!Clipper64.execute}. When the clipping operation finishes, this
+   object will be populated with data representing the clipped solution.
+
+   A {!PolyTree64.t} object is a container for any number of {!PolyTree64.t} child objects,
+   each representing a single polygon contour. The top-level descendents of a
+   {!PolyTree64.t} solution will always be outer polygon contours. Children may
+   in turn contain their own children to any level of nesting. Children of outer
+   polygon contours will always represent holes, and children of holes will
+   always represent nested outer polygon contours.
+
+   {!PolyTree64.t} will never contain open paths since open paths
+   can't contain paths. When clipping open paths, these will always be
+   represented in solutions via a separate {!Paths64.t} structure. *)
+
   type t = polytree64
 
   val make : ?parent:t -> unit -> t
   val clear : t -> unit
-  val add_child : t -> path64 -> t
   val parent : t -> t option
   val child : t -> int -> t
   val level : t -> int
@@ -334,6 +478,9 @@ module PolyTree64 : sig
 end
 
 module Clipper64 : sig
+  (** Clipping (boolean) operations on int64 paths/polygons *)
+
+  (** the core class of Clipper2 (int64 edition) *)
   type t
 
   val make : unit -> t
@@ -342,17 +489,17 @@ module Clipper64 : sig
   val add_clip : t -> Paths64.t -> unit
 
   val execute
-    :  ?fill_rule:[< `EvenOdd | `Negative | `NonZero | `Positive > `NonZero ]
+    :  ?fill_rule:fill_rule
     -> ?open_solution:Paths64.t
-    -> op:[< `Difference | `Intersection | `None | `Union | `Xor ]
+    -> op:clip_type
     -> solution:Paths64.t
     -> t
     -> (unit, string) result
 
   val execute_tree
-    :  ?fill_rule:[< `EvenOdd | `Negative | `NonZero | `Positive > `NonZero ]
+    :  ?fill_rule:fill_rule
     -> ?open_solution:Paths64.t
-    -> op:[< `Difference | `Intersection | `None | `Union | `Xor ]
+    -> op:clip_type
     -> solution:PolyTree64.t
     -> t
     -> (unit, string) result
@@ -364,7 +511,15 @@ module Clipper64 : sig
   val clear : t -> unit
 end
 
+(** {1 Offsetting} *)
+
 module Offset : sig
+  (** This class provides a mixed interface (float and int64). Unlike the
+    purpose built {!ClipperD.t} it does not perform handle the conversion of
+    incoming doubles to int64 using a precision set by the user -- they are
+    simply truncated. Thus if you are working with floats, it is recommended
+    that you make use of the helper function {!PathsD.inflate} at this time. *)
+
   type t
 
   val make
@@ -375,23 +530,11 @@ module Offset : sig
     -> unit
     -> t
 
-  val add_pathd
-    :  ?join_type:[< `Miter of float option | `Round | `Square > `Round ]
-    -> ?end_type:[< `Butt | `Joined | `Polygon | `Round | `Square > `Polygon ]
-    -> t
-    -> PathD.t
-    -> unit
-
-  val add_pathsd : t -> PathsD.t -> C__.Types.JoinType.t -> C__.Types.EndType.t -> unit
-  val add_path64 : t -> Path64.t -> C__.Types.JoinType.t -> C__.Types.EndType.t -> unit
-  val add_paths64 : t -> Paths64.t -> C__.Types.JoinType.t -> C__.Types.EndType.t -> unit
-
-  val execute
-    :  unit Ctypes_static.ptr
-    -> t
-    -> float
-    -> C__.Types.Paths64.t Ctypes_static.ptr
-
+  val add_pathd : ?join_type:join_type -> ?end_type:end_type -> t -> PathD.t -> unit
+  val add_pathsd : ?join_type:join_type -> ?end_type:end_type -> t -> PathsD.t -> unit
+  val add_path64 : ?join_type:join_type -> ?end_type:end_type -> t -> Path64.t -> unit
+  val add_paths64 : ?join_type:join_type -> ?end_type:end_type -> t -> Paths64.t -> unit
+  val execute : delta:float -> t -> Paths64.t
   val get_miter_limit : t -> float
   val set_miter_limit : t -> float -> unit
   val get_arc_tolerance : t -> float

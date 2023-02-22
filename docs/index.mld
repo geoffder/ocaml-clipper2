@@ -8,10 +8,17 @@ Clipper2} polygon clipping (C++) library.
   <img src="_assets/clipper2_australia.png" style="width:100mm;"/>
   </p> %}
 
+{1 Sub-libraries}
+
+In addition to the the higher level abstraction provided by the main library,
+the sub-librarys {{!module-C} [clipper.c]} and {{!module-Thin} [clipper.thin]}
+are provided to enable lower-level access to the underlying C API.
+- {!module-C} -- generated C bindings
+- {!module-Thin} -- thinly wrapped bindings (pointers abstracted)
+
 {1:api API}
 
-- {!module-Clipper} -- top level library interface
-- {!module-C} -- direct C bindings
+{!module-Clipper} -- top level library interface
 
 {2 Functor Parameters}
 

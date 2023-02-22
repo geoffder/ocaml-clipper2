@@ -95,13 +95,13 @@ module ConfigTypes = struct
     | `Round
       (** rounding is appliedto all joins that have convex external
              angles, and it maintains the exact offset distance from the join vertex *)
-    | `Miter of float option
+    | `Miter
       (** there's a necessary limit to mitered joins (to avoid narrow angled
               joins producing excessively long and narrow
               {{:http://www.angusj.com/clipper2/Docs/Units/Clipper.Offset/Classes/ClipperOffset/Properties/MiterLimit.htm}
-              spikes})). The optional limit sets the maximum distance in multiples of
+              spikes})). The limit sets the maximum distance in multiples of
               the [delta] specified for the offsetting operation (default is
-              [2], which is the minimum allowed). *)
+              [2.], which is the minimum allowed). *)
     ]
 
   (** Sets whether paths are treated as closed ([`Polygon]) when offsetting or
@@ -122,7 +122,7 @@ module type Config = sig
 
   (** The default filling rule used by the clipping algorithm (for boolean
        operations) *)
-  val fill_rule : ConfigTypes.fill_rule option
+  val fill_rule : Thin.fill_rule option
 
   (** The default treatment of corners when offsetting paths *)
   val join_type : ConfigTypes.join_type option
@@ -307,6 +307,11 @@ module type S = sig
        Return the number of paths in [t]. *)
   val n_paths : ('cpp, 'list) t -> int
 
+  (** [subpath t i]
+
+       Get the [i]th subpath from the paths [t]. *)
+  val subpath : paths -> int -> path
+
   (** [path_pt t i]
 
        Get the point at index [i] from the path [t]. *)
@@ -387,24 +392,31 @@ module type S = sig
 
   (** {1 Offsetting} *)
 
-  (** [inflate ?join_type ?end_type ~delta t]
+  (** [inflate ?miter_limit ?join_type ?end_type ~delta t]
 
-          Offset the polygon (or open path) [t] by [delta]. If [t] is a closed
-          polygonal path, it's important that [end_type] is [`Polygon] (default
-          if not overridden by user's [Config]). If instead you select one of the open
-          path end types (e.g. [`Joined]), the polygon's {i outline} will be inflated
-          ({{:https://github.com/AngusJohnson/Clipper2/discussions/154#discussion-4284428}
-          example}).
+       Offset the polygon (or open path) [t] by [delta]. If [t] is a closed
+       polygonal path, it's important that [end_type] is [`Polygon] (default
+       if not overridden by user's [Config]). If instead you select one of the open
+       path end types (e.g. [`Joined]), the polygon's {i outline} will be inflated
+       ({{:https://github.com/AngusJohnson/Clipper2/discussions/154#discussion-4284428}
+       example}).
 
-          - with closed paths (polygons), a positive delta specifies how much outer
-            polygon contours will expand and how much inner "hole" contours will contract (and
-            the converse with negative deltas).
-          - with open paths (polylines), including EndType.Join, delta specifies the width
-            of the inflated line.
-          - {b Caution:} offsetting self-intersecting polygons may produce
-            unexpected results. *)
+      - The [miter_limit] sets the maximum distance in multiples of [delta]
+        that vertices can be offset from their original positions with
+        {!join_type} [`Miter] before squaring is applied (default is [2.], which is
+        the minimum allowed -- [Invalid_argument] is raised otherwise). See the
+        {{:http://www.angusj.com/clipper2/Docs/Units/Clipper.Offset/Classes/ClipperOffset/Properties/MiterLimit.htm}
+        Clipper2 MiterLimit}) page for a visual example.
+       - with closed paths (polygons), a positive delta specifies how much outer
+         polygon contours will expand and how much inner "hole" contours will contract (and
+         the converse with negative deltas).
+       - with open paths (polylines), including [`Joined], delta specifies the width
+         of the inflated line.
+       - {b Caution:} offsetting self-intersecting polygons may produce
+         unexpected results. *)
   val inflate
-    :  ?join_type:join_type
+    :  ?miter_limit:float
+    -> ?join_type:join_type
     -> ?end_type:end_type
     -> delta:float
     -> ('cpp, 'list) t

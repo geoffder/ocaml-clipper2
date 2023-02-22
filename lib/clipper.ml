@@ -63,17 +63,17 @@ struct
       let n = ref 0 in
       let len = PathsD.length ps in
       for i = 0 to len - 1 do
-        n := !n + PathD.length (PathsD.get_path ps i)
+        n := !n + PathD.length (PathsD.unsafe_subpath ps i)
       done;
       !n
 
-  let n_pts_sub (Paths ps) i = PathsD.path_length ps i
+  let n_pts_sub (Paths ps) i = PathsD.sublength ps i
 
   let n_paths : type c l. (c, l) t -> int = function
     | Path _ -> 1
     | Paths ps -> PathsD.length ps
 
-  let[@inline] cpath_get_point t i = Point.to_v @@ PathD.get_point t i
+  let[@inline] cpath_get_point t i = Point.to_v @@ PathD.unsafe_get t i
   let cpath_to_seq c = Seq.init (PathD.length c) (cpath_get_point c)
 
   let cpath_of_seq vs =
@@ -88,14 +88,16 @@ struct
     Seq.iter (fun v -> PathD.add_point t (Point.of_v v)) (Ctr.to_seq vs);
     t
 
+  let subpath (Paths ps) i = Path (PathsD.subpath ps i)
+
   let path_pt (Path p) i =
     if i >= 0 && i < PathD.length p
     then cpath_get_point p i
     else invalid_arg "path_pt: out of bounds access"
 
   let paths_pt (Paths ps) i j =
-    if i >= 0 && i < PathsD.length ps && j >= 0 && j < PathsD.path_length ps i
-    then Point.to_v @@ PathsD.get_point ps i j
+    if i >= 0 && i < PathsD.length ps && j >= 0 && j < PathsD.unsafe_sublength ps i
+    then Point.to_v @@ PathsD.unsafe_get ps i j
     else invalid_arg "paths_pt: out of bounds access"
 
   let[@inline] ( .%() ) p i = path_pt p i
@@ -111,8 +113,8 @@ struct
     | Path p -> cpath_to_contour p
     | Paths ps ->
       List.init (PathsD.length ps) (fun i ->
-        let len = PathsD.path_length ps i in
-        Ctr.of_seq @@ Seq.init len (fun j -> Point.to_v @@ PathsD.get_point ps i j) )
+        let len = PathsD.unsafe_sublength ps i in
+        Ctr.of_seq @@ Seq.init len (fun j -> Point.to_v @@ PathsD.unsafe_get ps i j) )
 
   let ellipse ?fn ?centre wh =
     Path (PathD.ellipse ?fn ?centre:(Option.map Point.of_v centre) (V.x wh) (V.y wh))
@@ -142,7 +144,7 @@ struct
           (fun (Paths ps) ->
             let len = PathsD.length ps in
             for i = 0 to len - 1 do
-              PathsD.add_path cs (PathsD.get_path ps i)
+              PathsD.add_path cs (PathsD.unsafe_subpath ps i)
             done )
           clips;
         ss
@@ -169,7 +171,7 @@ struct
           (fun (Paths ps) ->
             let len = PathsD.length ps in
             for i = 0 to len - 1 do
-              PathsD.add_path cs (PathsD.get_path ps i)
+              PathsD.add_path cs (PathsD.unsafe_subpath ps i)
             done )
           clips;
         ss
@@ -206,6 +208,7 @@ struct
 
   let inflate
     (type c l)
+    ?miter_limit
     ?(join_type = join_type)
     ?(end_type = end_type)
     ~delta
@@ -219,7 +222,7 @@ struct
         ps
       | Paths ps -> ps
     in
-    Paths (PathsD.inflate ~precision ~join_type ~end_type ~delta ps)
+    Paths (PathsD.inflate ~precision ?miter_limit ~join_type ~end_type ~delta ps)
 
   let trim_collinear (type c l) ?closed (t : (c, l) t) : (c, l) t =
     match t with
@@ -229,7 +232,7 @@ struct
       and len = PathsD.length ps in
       (* TODO: should make a function on the C side to cut down on copying? *)
       for i = 0 to len - 1 do
-        let p = PathsD.get_path ps i in
+        let p = PathsD.unsafe_subpath ps i in
         PathsD.add_path trimmed (PathD.trim_collinear ~precision ?closed p)
       done;
       Paths trimmed
@@ -362,17 +365,17 @@ struct
       let n = ref 0 in
       let len = Paths64.length ps in
       for i = 0 to len - 1 do
-        n := !n + Path64.length (Paths64.get_path ps i)
+        n := !n + Path64.length (Paths64.unsafe_subpath ps i)
       done;
       !n
 
-  let n_pts_sub (Paths ps) i = Paths64.path_length ps i
+  let n_pts_sub (Paths ps) i = Paths64.sublength ps i
 
   let n_paths : type c l. (c, l) t -> int = function
     | Path _ -> 1
     | Paths ps -> Paths64.length ps
 
-  let[@inline] cpath_get_point t i = Point.to_v @@ Path64.get_point t i
+  let[@inline] cpath_get_point t i = Point.to_v @@ Path64.unsafe_get t i
   let cpath_to_seq c = Seq.init (Path64.length c) (cpath_get_point c)
 
   let cpath_of_seq vs =
@@ -387,14 +390,16 @@ struct
     Seq.iter (fun v -> Path64.add_point t (Point.of_v v)) (Ctr.to_seq vs);
     t
 
+  let subpath (Paths ps) i = Path (Paths64.subpath ps i)
+
   let path_pt (Path p) i =
     if i >= 0 && i < Path64.length p
     then cpath_get_point p i
     else invalid_arg "path_pt: out of bounds access"
 
   let paths_pt (Paths ps) i j =
-    if i >= 0 && i < Paths64.length ps && j >= 0 && j < Paths64.path_length ps i
-    then Point.to_v @@ Paths64.get_point ps i j
+    if i >= 0 && i < Paths64.length ps && j >= 0 && j < Paths64.unsafe_sublength ps i
+    then Point.to_v @@ Paths64.unsafe_get ps i j
     else invalid_arg "paths_pt: out of bounds access"
 
   let[@inline] ( .%() ) p i = path_pt p i
@@ -410,8 +415,8 @@ struct
     | Path p -> cpath_to_contour p
     | Paths ps ->
       List.init (Paths64.length ps) (fun i ->
-        let len = Paths64.path_length ps i in
-        Ctr.of_seq @@ Seq.init len (fun j -> Point.to_v @@ Paths64.get_point ps i j) )
+        let len = Paths64.unsafe_sublength ps i in
+        Ctr.of_seq @@ Seq.init len (fun j -> Point.to_v @@ Paths64.unsafe_get ps i j) )
 
   let ellipse ?fn ?centre wh =
     Path (Path64.ellipse ?fn ?centre:(Option.map Point.of_v centre) (V.x wh) (V.y wh))
@@ -441,7 +446,7 @@ struct
           (fun (Paths ps) ->
             let len = Paths64.length ps in
             for i = 0 to len - 1 do
-              Paths64.add_path cs (Paths64.get_path ps i)
+              Paths64.add_path cs (Paths64.unsafe_subpath ps i)
             done )
           clips;
         ss
@@ -468,7 +473,7 @@ struct
           (fun (Paths ps) ->
             let len = Paths64.length ps in
             for i = 0 to len - 1 do
-              Paths64.add_path cs (Paths64.get_path ps i)
+              Paths64.add_path cs (Paths64.unsafe_subpath ps i)
             done )
           clips;
         ss
@@ -505,6 +510,7 @@ struct
 
   let inflate
     (type c l)
+    ?miter_limit
     ?(join_type = join_type)
     ?(end_type = end_type)
     ~delta
@@ -518,7 +524,7 @@ struct
         ps
       | Paths ps -> ps
     in
-    Paths (Paths64.inflate ~join_type ~end_type ~delta ps)
+    Paths (Paths64.inflate ?miter_limit ~join_type ~end_type ~delta ps)
 
   let trim_collinear (type c l) ?closed (t : (c, l) t) : (c, l) t =
     match t with
@@ -528,7 +534,7 @@ struct
       and len = Paths64.length ps in
       (* TODO: should make a function on the C side to cut down on copying? *)
       for i = 0 to len - 1 do
-        let p = Paths64.get_path ps i in
+        let p = Paths64.unsafe_subpath ps i in
         Paths64.add_path trimmed (Path64.trim_collinear ?closed p)
       done;
       Paths trimmed

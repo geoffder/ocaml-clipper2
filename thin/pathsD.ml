@@ -8,14 +8,29 @@ let make () =
 
 let add_path t p = C.Funcs.pathsd_add_path t p
 let length t = size_to_int @@ C.Funcs.pathsd_length t
-let path_length t i = size_to_int @@ C.Funcs.pathsd_path_length t i
+let unsafe_sublength t i = size_to_int @@ C.Funcs.pathsd_path_length t i
 
-let get_path t i =
+let sublength t i =
+  if i < 0 && i > length t
+  then unsafe_sublength t i
+  else invalid_arg "PathsD.sublength: out of bounds access"
+
+let unsafe_subpath t i =
   let buf, p = PathD_0.alloc () in
   let _ = C.Funcs.pathsd_get_path buf t i in
   p
 
-let get_point t i j = C.Funcs.pathsd_get_point t i j
+let subpath t i =
+  if i < 0 && i > length t
+  then unsafe_subpath t i
+  else invalid_arg "PathsD.subpath: out of bounds access"
+
+let unsafe_get t i j = C.Funcs.pathsd_get_point t i j
+
+let get t i j =
+  if i >= 0 && i < length t && j >= 0 && j < unsafe_sublength t i
+  then unsafe_get t i j
+  else invalid_arg "PathsD.get: out of bounds access"
 
 let translate t x y =
   let buf, translated = alloc () in
@@ -62,9 +77,17 @@ let rect_clip ?(precision = 2) ?(closed = true) t rect =
   in
   clipped
 
-let inflate ?(precision = 2) ?(join_type = `Round) ?(end_type = `Polygon) ~delta t =
+let inflate
+  ?(precision = 2)
+  ?(miter_limit = 2.)
+  ?(join_type = `Round)
+  ?(end_type = `Polygon)
+  ~delta
+  t
+  =
+  if miter_limit < 2. then invalid_arg "Miter limit can be no less than 2.";
   let buf, inflated = alloc ()
-  and join_type, miter_limit = JoinType.make join_type
+  and join_type = JoinType.make join_type
   and end_type = EndType.make end_type in
   let _ = C.Funcs.pathsd_inflate buf t delta join_type end_type miter_limit precision in
   inflated

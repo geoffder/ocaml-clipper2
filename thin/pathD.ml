@@ -9,7 +9,13 @@ let make () =
   t
 
 let length t = size_to_int @@ C.Funcs.pathd_length t
-let get_point t i = C.Funcs.pathd_get_point t i
+let unsafe_get t i = C.Funcs.pathd_get_point t i
+
+let get t i =
+  if i >= 0 && i < length t
+  then C.Funcs.pathd_get_point t i
+  else invalid_arg "PathD.get: out of bounds access"
+
 let add_point t p = C.Funcs.pathd_add_point t p
 
 let ellipse ?(fn = 0) ?centre w h =
