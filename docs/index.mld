@@ -44,7 +44,7 @@ same but for the int64 interface.
   let ex =
     let a = [ 0., 0.; 10., 0.; 10., 10.; 0., 10. ] in
     let b = List.map (fun (x, y) -> x +. 5., y +. 5.) a in
-    C.Paths.(to_list @@ difference (of_list [ a ]) (of_list [ b ]))
+    C.(contour @@ difference (path a) ([ path b ]))
 ]}
 
 {1 Sub-libraries}
