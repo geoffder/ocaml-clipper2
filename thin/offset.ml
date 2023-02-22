@@ -23,11 +23,11 @@ let alloc () =
   buf, Ctypes_static.(Ctypes.coerce (ptr void) (ptr C.Types.Offset.t) buf)
 
 let make
-    ?(miter_limit = 2.)
-    ?(arc_tolerance = 0.)
-    ?(preserve_collinear = false)
-    ?(reverse_solution = false)
-    ()
+  ?(miter_limit = 2.)
+  ?(arc_tolerance = 0.)
+  ?(preserve_collinear = false)
+  ?(reverse_solution = false)
+  ()
   =
   let buf, t = alloc () in
   let _ =
@@ -35,7 +35,14 @@ let make
   in
   t
 
-let add_pathd t p = C.Funcs.offset_add_pathd t p
+(* FIXME: in order for consistency, will need to make miter_limit an option in
+    the high-level interface such that miter can be a bare variant for these
+    functions (miter_limit is a property of the class, not an argument for these)*)
+let add_pathd ?(join_type = `Round) ?(end_type = `Polygon) t p =
+  let join_type, _miter_limit = JoinType.make join_type
+  and end_type = EndType.make end_type in
+  C.Funcs.offset_add_pathd t p join_type end_type
+
 let add_pathsd t p = C.Funcs.offset_add_pathsd t p
 let add_path64 t p = C.Funcs.offset_add_path64 t p
 let add_paths64 t p = C.Funcs.offset_add_paths64 t p

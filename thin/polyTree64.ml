@@ -33,7 +33,7 @@ let is_hole t = C.Funcs.polytree64_is_hole t
 let area t = C.Funcs.polytree64_area t
 
 let polygon t =
-  let buf, path = Path64.alloc () in
+  let buf, path = Path64_0.alloc () in
   let _ = C.Funcs.polytree64_polygon buf t in
   path
 

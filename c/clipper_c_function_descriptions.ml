@@ -590,7 +590,7 @@ module Functions (F : Ctypes.FOREIGN) = struct
     foreign "clipper_polytree64_level" (ptr PolyTree64.t @-> returning int)
 
   let polytree64_is_hole =
-    foreign "clipper_polytree64_is_hole" (ptr PolyTree64.t @-> returning int)
+    foreign "clipper_polytree64_is_hole" (ptr PolyTree64.t @-> returning bool)
 
   let polytree64_polygon =
     foreign
@@ -635,7 +635,7 @@ module Functions (F : Ctypes.FOREIGN) = struct
     foreign "clipper_polytreed_level" (ptr PolyTreeD.t @-> returning int)
 
   let polytreed_is_hole =
-    foreign "clipper_polytreed_is_hole" (ptr PolyTreeD.t @-> returning int)
+    foreign "clipper_polytreed_is_hole" (ptr PolyTreeD.t @-> returning bool)
 
   let polytreed_polygon =
     foreign

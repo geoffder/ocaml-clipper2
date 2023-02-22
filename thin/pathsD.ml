@@ -11,7 +11,7 @@ let length t = size_to_int @@ C.Funcs.pathsd_length t
 let path_length t i = size_to_int @@ C.Funcs.pathsd_path_length t i
 
 let get_path t i =
-  let buf, p = PathD.alloc () in
+  let buf, p = PathD_0.alloc () in
   let _ = C.Funcs.pathsd_get_path buf t i in
   p
 

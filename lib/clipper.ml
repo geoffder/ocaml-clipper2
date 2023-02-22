@@ -51,15 +51,7 @@ struct
   module Rect = struct
     include RectD
 
-    let of_pts a b =
-      let buf, t = alloc ()
-      and left = Float.min (V.x a) (V.x b)
-      and right = Float.max (V.x a) (V.x b)
-      and bottom = Float.min (V.y a) (V.y b)
-      and top = Float.max (V.y a) (V.y b) in
-      let _ = C.Funcs.rectd buf left top right bottom in
-      t
-
+    let of_pts a b = of_pts (Point.of_v a) (Point.of_v b)
     let midpoint t = Point.to_v @@ midpoint t
     let as_path t = Path (as_path t)
     let contains_pt t p = contains_pt t (Point.of_v p)
@@ -120,8 +112,7 @@ struct
     | Paths ps ->
       List.init (PathsD.length ps) (fun i ->
         let len = PathsD.path_length ps i in
-        Ctr.of_seq
-        @@ Seq.init len (fun j -> Point.to_v @@ C.Funcs.pathsd_get_point ps i j) )
+        Ctr.of_seq @@ Seq.init len (fun j -> Point.to_v @@ PathsD.get_point ps i j) )
 
   let ellipse ?fn ?centre wh =
     Path (PathD.ellipse ?fn ?centre:(Option.map Point.of_v centre) (V.x wh) (V.y wh))
@@ -268,7 +259,7 @@ struct
     | Paths ps -> PathsD.area ps
 
   let point_inside (Path path) p = PathD.point_inside path (Point.of_v p)
-  let is_positive (Path p) = C.Funcs.pathd_is_positive p
+  let is_positive (Path p) = PathD.is_positive p
 
   let of_poly p =
     let c = PathsD.make () in
@@ -359,15 +350,7 @@ struct
   module Rect = struct
     include Rect64
 
-    let of_pts a b =
-      let buf, t = alloc ()
-      and left = Int64.min (V.x a) (V.x b)
-      and right = Int64.max (V.x a) (V.x b)
-      and bottom = Int64.min (V.y a) (V.y b)
-      and top = Int64.max (V.y a) (V.y b) in
-      let _ = C.Funcs.rect64 buf left top right bottom in
-      t
-
+    let of_pts a b = of_pts (Point.of_v a) (Point.of_v b)
     let midpoint t = Point.to_v @@ midpoint t
     let as_path t = Path (as_path t)
     let contains_pt t p = contains_pt t (Point.of_v p)
@@ -428,8 +411,7 @@ struct
     | Paths ps ->
       List.init (Paths64.length ps) (fun i ->
         let len = Paths64.path_length ps i in
-        Ctr.of_seq
-        @@ Seq.init len (fun j -> Point.to_v @@ C.Funcs.paths64_get_point ps i j) )
+        Ctr.of_seq @@ Seq.init len (fun j -> Point.to_v @@ Paths64.get_point ps i j) )
 
   let ellipse ?fn ?centre wh =
     Path (Path64.ellipse ?fn ?centre:(Option.map Point.of_v centre) (V.x wh) (V.y wh))
@@ -576,7 +558,7 @@ struct
     | Paths ps -> Paths64.area ps
 
   let point_inside (Path path) p = Path64.point_inside path (Point.of_v p)
-  let is_positive (Path p) = C.Funcs.path64_is_positive p
+  let is_positive (Path p) = Path64.is_positive p
 
   let of_poly p =
     let c = Paths64.make () in

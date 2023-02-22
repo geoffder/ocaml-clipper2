@@ -11,7 +11,7 @@ let length t = size_to_int @@ C.Funcs.paths64_length t
 let path_length t i = size_to_int @@ C.Funcs.paths64_path_length t i
 
 let get_path t i =
-  let buf, p = Path64.alloc () in
+  let buf, p = Path64_0.alloc () in
   let _ = C.Funcs.paths64_get_path buf t i in
   p
 

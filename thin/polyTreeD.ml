@@ -35,7 +35,7 @@ let is_hole t = C.Funcs.polytreed_is_hole t
 let area t = C.Funcs.polytreed_area t
 
 let polygon t =
-  let buf, path = PathD.alloc () in
+  let buf, path = PathD_0.alloc () in
   let _ = C.Funcs.polytreed_polygon buf t in
   path
 
