@@ -42,25 +42,67 @@ module RectD : sig
 
   (** {1 Construction and Conversion} *)
 
+  (** [make ~l ~t ~r ~b]
+
+        Create an axis-aligned rectangle with the bounds [l]eft, [t]op,
+        [r]ight, and [b]ottom. *)
   val make : l:float -> t:float -> r:float -> b:float -> t
+
+  (** [of_pts a b]
+
+       Create an axis-aligned bounding box (rectangle) that contains the
+       points [a] and [b]. *)
   val of_pts : PointD.t -> PointD.t -> t
+
+  (** [as_path t]
+
+       Obtain a path describing the perimeter of the rectangle [t]. *)
   val as_path : t -> pathd
 
   (** {1 Access} *)
 
+  (** [width t]
+
+       Obtain the width of the rectangle [t]. *)
   val width : t -> float
+
+  (** [height t]
+
+       Obtain the height of the rectangle [t]. *)
   val height : t -> float
+
+  (** [midpoint t]
+
+       Obtain the midpoint of the rectangle [t]. *)
   val midpoint : t -> PointD.t
 
   (** {1 Transformations} *)
 
+  (** [scale t s]
+
+       Scale the rectangle [t] by the factor [s]. *)
   val scale : float -> t -> t
 
   (** {1 Geometry} *)
 
+  (** [contains_pt t p]
+
+       Determine whether the point [p] lies within the rectangle [t]. *)
   val contains_pt : t -> PointD.t -> bool
+
+  (** [contains_rect a b]
+
+       Determine whether the rectangle [a] fully contains the rectangle [b]. *)
   val contains_rect : t -> t -> bool
+
+  (** [is_empty t]
+
+       Check whether the rectangle [t] has an area of zero. *)
   val is_empty : t -> bool
+
+  (** [intersects a b]
+
+       Determine whether the rectangles [a] and [b] intersect. *)
   val intersects : t -> t -> bool
 end
 
@@ -301,25 +343,67 @@ module Rect64 : sig
 
   (** {1 Construction and Conversion} *)
 
+  (** [make ~l ~t ~r ~b]
+
+        Create an axis-aligned rectangle with the bounds [l]eft, [t]op,
+        [r]ight, and [b]ottom. *)
   val make : l:int64 -> t:int64 -> r:int64 -> b:int64 -> t
+
+  (** [of_pts a b]
+
+       Create an axis-aligned bounding box (rectangle) that contains the
+       points [a] and [b]. *)
   val of_pts : Point64.t -> Point64.t -> t
+
+  (** [as_path t]
+
+       Obtain a path describing the perimeter of the rectangle [t]. *)
   val as_path : t -> path64
 
   (** {1 Access} *)
 
+  (** [width t]
+
+       Obtain the width of the rectangle [t]. *)
   val width : t -> int64
+
+  (** [height t]
+
+       Obtain the height of the rectangle [t]. *)
   val height : t -> int64
+
+  (** [midpoint t]
+
+       Obtain the midpoint of the rectangle [t]. *)
   val midpoint : t -> Point64.t
 
   (** {1 Transformations} *)
 
+  (** [scale t s]
+
+       Scale the rectangle [t] by the factor [s]. *)
   val scale : float -> t -> t
 
   (** {1 Geometry} *)
 
+  (** [contains_pt t p]
+
+       Determine whether the point [p] lies within the rectangle [t]. *)
   val contains_pt : t -> Point64.t -> bool
+
+  (** [contains_rect a b]
+
+       Determine whether the rectangle [a] fully contains the rectangle [b]. *)
   val contains_rect : t -> t -> bool
+
+  (** [is_empty t]
+
+       Check whether the rectangle [t] has an area of zero. *)
   val is_empty : t -> bool
+
+  (** [intersects a b]
+
+       Determine whether the rectangles [a] and [b] intersect. *)
   val intersects : t -> t -> bool
 end
 
