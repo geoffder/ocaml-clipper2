@@ -8,4 +8,5 @@ let make x y =
 
 let[@inline] x t = Ctypes.getf t C.Types.PointD.x
 let[@inline] y t = Ctypes.getf t C.Types.PointD.y
+let[@inline] of_tup (x, y) = make x y
 let[@inline] to_tup t = x t, y t

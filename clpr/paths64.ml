@@ -7,6 +7,12 @@ let make () =
   t
 
 let add_path t p = C.Funcs.paths64_add_path t p
+
+let of_tups l =
+  let t = make () in
+  List.iter (fun s -> add_path t (Path64.of_tups s)) l;
+  t
+
 let length t = size_to_int @@ C.Funcs.paths64_length t
 let unsafe_sublength t i = size_to_int @@ C.Funcs.paths64_path_length t i
 

@@ -16,6 +16,11 @@ let get t i =
 
 let add_point t p = C.Funcs.path64_add_point t p
 
+let of_tups l =
+  let t = make () in
+  List.iter (fun p -> add_point t (Point64.of_tup p)) l;
+  t
+
 let ellipse ?(fn = 0) ?centre w h =
   let centre =
     match centre with

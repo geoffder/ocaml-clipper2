@@ -25,6 +25,7 @@ module PointD : sig
   (** {1 Construction / Conversion} *)
 
   val make : float -> float -> t
+  val of_tup : float * float -> t
   val to_tup : t -> float * float
 
   (** {1 Access} *)
@@ -117,6 +118,7 @@ module PathD : sig
   (** {1 Construction} *)
 
   val make : unit -> t
+  val of_tups : (float * float) list -> t
   val ellipse : ?fn:int -> ?centre:PointD.t -> float -> float -> t
   val add_point : t -> PointD.t -> unit
 
@@ -169,6 +171,7 @@ module PathsD : sig
   (** {1 Construction} *)
 
   val make : unit -> t
+  val of_tups : (float * float) list list -> t
   val add_path : t -> PathD.t -> unit
 
   (** {1 Access} *)
@@ -326,6 +329,7 @@ module Point64 : sig
   (** {1 Construction / Conversion} *)
 
   val make : int64 -> int64 -> t
+  val of_tup : int64 * int64 -> t
   val to_tup : t -> int64 * int64
 
   (** {1 Access} *)
@@ -418,6 +422,7 @@ module Path64 : sig
   (** {1 Construction} *)
 
   val make : unit -> t
+  val of_tups : (int64 * int64) list -> t
   val ellipse : ?fn:int -> ?centre:Point64.t -> int64 -> int64 -> t
   val add_point : t -> Point64.t -> unit
 
@@ -470,6 +475,7 @@ module Paths64 : sig
   (** {1 Construction} *)
 
   val make : unit -> t
+  val of_tups : (int64 * int64) list list -> t
   val add_path : t -> Path64.t -> unit
 
   (** {1 Access} *)
