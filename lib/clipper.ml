@@ -1,6 +1,6 @@
 include Clipper_intf
 include ConfigTypes
-open Thin
+open Clpr
 
 let config ?fill_rule ?join_type ?end_type ?precision ?eps () =
   ( module struct

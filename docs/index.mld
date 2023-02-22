@@ -8,14 +8,6 @@ Clipper2} polygon clipping (C++) library.
   <img src="_assets/clipper2_australia.png" style="width:100mm;"/>
   </p> %}
 
-{1 Sub-libraries}
-
-In addition to the the higher level abstraction provided by the main library,
-the sub-librarys {{!module-C} [clipper.c]} and {{!module-Thin} [clipper.thin]}
-are provided to enable lower-level access to the underlying C API.
-- {!module-C} -- generated C bindings
-- {!module-Thin} -- thinly wrapped bindings (pointers abstracted)
-
 {1:api API}
 
 {!module-Clipper} -- top level library interface
@@ -54,3 +46,11 @@ same but for the int64 interface.
     let b = List.map (fun (x, y) -> x +. 5., y +. 5.) a in
     C.Paths.(to_list @@ difference (of_list [ a ]) (of_list [ b ]))
 ]}
+
+{1 Sub-libraries}
+
+In addition to the the higher level abstraction provided by the main library,
+the sub-librarys {{!module-C} [clipper.c]} and {{!module-Clpr} [clipper.clpr]}
+are provided to enable lower-level access to the underlying C API.
+- {!module-C} -- generated C bindings
+- {!module-Clpr} -- thinly wrapped bindings (pointers abstracted)

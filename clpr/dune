@@ -1,4 +1,4 @@
 (library
- (name thin)
- (public_name clipper.thin)
+ (name clpr)
+ (public_name clipper.clpr)
  (libraries ctypes.foreign clipper.c))

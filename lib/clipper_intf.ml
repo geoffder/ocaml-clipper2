@@ -122,7 +122,7 @@ module type Config = sig
 
   (** The default filling rule used by the clipping algorithm (for boolean
        operations) *)
-  val fill_rule : Thin.fill_rule option
+  val fill_rule : ConfigTypes.fill_rule option
 
   (** The default treatment of corners when offsetting paths *)
   val join_type : ConfigTypes.join_type option
