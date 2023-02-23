@@ -236,10 +236,7 @@ struct
     =
     let ps =
       match t with
-      | Path p ->
-        let ps = PathsD.make () in
-        PathsD.add_path ps p;
-        ps
+      | Path p -> PathsD.of_path p
       | Paths ps -> ps
     in
     Paths (PathsD.inflate ~precision ?miter_limit ~join_type ~end_type ~delta ps)
@@ -558,10 +555,7 @@ struct
     =
     let ps =
       match t with
-      | Path p ->
-        let ps = Paths64.make () in
-        Paths64.add_path ps p;
-        ps
+      | Path p -> Paths64.of_path p
       | Paths ps -> ps
     in
     Paths (Paths64.inflate ?miter_limit ~join_type ~end_type ~delta ps)

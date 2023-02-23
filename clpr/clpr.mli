@@ -173,6 +173,7 @@ module PathsD : sig
   val make : unit -> t
   val of_tups : (float * float) list list -> t
   val add_path : t -> PathD.t -> unit
+  val of_path : PathD.t -> t
 
   (** {1 Access} *)
 
@@ -477,6 +478,7 @@ module Paths64 : sig
   val make : unit -> t
   val of_tups : (int64 * int64) list list -> t
   val add_path : t -> Path64.t -> unit
+  val of_path : Path64.t -> t
 
   (** {1 Access} *)
 
