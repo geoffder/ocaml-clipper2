@@ -1,4 +1,4 @@
 (library
  (name clpr)
  (public_name clipper.clpr)
- (libraries ctypes.foreign clipper.c))
+ (libraries ctypes.foreign clipper.c integers))

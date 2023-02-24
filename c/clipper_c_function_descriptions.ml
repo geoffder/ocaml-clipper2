@@ -951,6 +951,114 @@ module Functions (F : Ctypes.FOREIGN) = struct
       "clipper_clipperoffset_execute"
       (ptr void @-> ptr Offset.t @-> double @-> returning (ptr Paths64.t))
 
+  (** {1 SvgWriter Class} *)
+
+  (** {2 contsructors} *)
+
+  let svgwriter =
+    foreign "clipper_svgwriter" (ptr void @-> int @-> returning (ptr SvgWriter.t))
+
+  (** {2 accessors / setters} *)
+
+  let svgwriter_fill_rule =
+    foreign "clipper_svgwriter_fill_rule" (ptr SvgWriter.t @-> returning FillRule.t)
+
+  let svgwriter_set_coords_style =
+    foreign
+      "clipper_svgwriter_set_coords_style"
+      (ptr SvgWriter.t @-> ptr char @-> uint32_t @-> uint32_t @-> returning void)
+
+  (** {2 methods} *)
+
+  let svgwriter_add_text =
+    foreign
+      "clipper_svgwriter_add_text"
+      ( ptr SvgWriter.t
+      @-> ptr char
+      @-> uint32_t
+      @-> uint32_t
+      @-> int
+      @-> int
+      @-> returning void )
+
+  let svgwriter_add_path64 =
+    foreign
+      "clipper_svgwriter_add_path64"
+      ( ptr SvgWriter.t
+      @-> ptr Path64.t
+      @-> bool
+      @-> FillRule.t
+      @-> uint32_t
+      @-> uint32_t
+      @-> double
+      @-> bool
+      @-> returning void )
+
+  let svgwriter_add_pathd =
+    foreign
+      "clipper_svgwriter_add_pathd"
+      ( ptr SvgWriter.t
+      @-> ptr PathD.t
+      @-> bool
+      @-> FillRule.t
+      @-> uint32_t
+      @-> uint32_t
+      @-> double
+      @-> bool
+      @-> returning void )
+
+  let svgwriter_add_paths64 =
+    foreign
+      "clipper_svgwriter_add_paths64"
+      ( ptr SvgWriter.t
+      @-> ptr Paths64.t
+      @-> bool
+      @-> FillRule.t
+      @-> uint32_t
+      @-> uint32_t
+      @-> double
+      @-> bool
+      @-> returning void )
+
+  let svgwriter_add_pathsd =
+    foreign
+      "clipper_svgwriter_add_pathsd"
+      ( ptr SvgWriter.t
+      @-> ptr PathsD.t
+      @-> bool
+      @-> FillRule.t
+      @-> uint32_t
+      @-> uint32_t
+      @-> double
+      @-> bool
+      @-> returning void )
+
+  let svgwriter_clear =
+    foreign "clipper_svgwriter_clear" (ptr SvgWriter.t @-> returning void)
+
+  (** {1 SvgReader Class} *)
+
+  (** {2 contsructors} *)
+
+  let svgreader = foreign "clipper_svgreader" (ptr void @-> returning (ptr SvgReader.t))
+
+  (** {2 accessors} *)
+
+  let svgreader_get_pathsd =
+    foreign
+      "clipper_svgreader_get_pathsd"
+      (ptr void @-> ptr SvgReader.t @-> returning (ptr PathsD.t))
+
+  (** {2 methods} *)
+
+  let svgreader_load_from_file =
+    foreign
+      "clipper_svgreader_load_from_file"
+      (ptr SvgReader.t @-> ptr char @-> returning void)
+
+  let svgreader_clear =
+    foreign "clipper_svgreader_clear" (ptr SvgReader.t @-> returning void)
+
   (** {1 memory size} *)
 
   let path64_size = foreign "clipper_path64_size" (void @-> returning size_t)
@@ -964,6 +1072,8 @@ module Functions (F : Ctypes.FOREIGN) = struct
   let clipper64_size = foreign "clipper_clipper64_size" (void @-> returning size_t)
   let clipperd_size = foreign "clipper_clipperd_size" (void @-> returning size_t)
   let offset_size = foreign "clipper_clipperoffset_size" (void @-> returning size_t)
+  let svgwriter_size = foreign "clipper_svgwriter_size" (void @-> returning size_t)
+  let svgreader_size = foreign "clipper_svgreader_size" (void @-> returning size_t)
 
   (** {1 destruction} *)
 
@@ -992,6 +1102,12 @@ module Functions (F : Ctypes.FOREIGN) = struct
   let destruct_offset =
     foreign "clipper_destruct_clipperoffset" (ptr Offset.t @-> returning void)
 
+  let destruct_svgwriter =
+    foreign "clipper_destruct_svgwriter" (ptr SvgWriter.t @-> returning void)
+
+  let destruct_svgreader =
+    foreign "clipper_destruct_svgreader" (ptr SvgReader.t @-> returning void)
+
   (** {1 pointer free + destruction} *)
 
   let delete_path64 = foreign "clipper_delete_path64" (ptr Path64.t @-> returning void)
@@ -1015,4 +1131,10 @@ module Functions (F : Ctypes.FOREIGN) = struct
 
   let delete_clipperoffset =
     foreign "clipper_delete_clipperoffset" (ptr Offset.t @-> returning void)
+
+  let delete_svgwriter =
+    foreign "clipper_delete_svgwriter" (ptr SvgWriter.t @-> returning void)
+
+  let delete_svgreader =
+    foreign "clipper_delete_svgreader" (ptr SvgReader.t @-> returning void)
 end
