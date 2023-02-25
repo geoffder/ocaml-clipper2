@@ -1033,6 +1033,11 @@ module Functions (F : Ctypes.FOREIGN) = struct
       @-> bool
       @-> returning void )
 
+  let svgwriter_save_to_file =
+    foreign
+      "clipper_svgwriter_save_to_file"
+      (ptr SvgWriter.t @-> ptr char @-> int @-> int @-> int @-> returning bool)
+
   let svgwriter_clear =
     foreign "clipper_svgwriter_clear" (ptr SvgWriter.t @-> returning void)
 

@@ -52,7 +52,7 @@ let soln_pen_brush_clr = 0x4466FF66
 let add_pathd
   ?(closed = true)
   ?(fill_rule = `NonZero)
-  ?(show_coords = true)
+  ?(show_coords = false)
   ?(brush_color = subj_brush_clr)
   ?(pen_color = subj_pen_clr)
   ?(pen_width = 0.8)
@@ -63,5 +63,11 @@ let add_pathd
   and brush = Unsigned.UInt32.of_int brush_color
   and pen = Unsigned.UInt32.of_int pen_color in
   C.Funcs.svgwriter_add_pathd t p (not closed) fr brush pen pen_width show_coords
+
+let save ?(max_width = 0) ?(max_height = 0) ?(margin = 0) t filename =
+  let name = string_to_ptr Ctypes.char filename in
+  if C.Funcs.svgwriter_save_to_file t name max_width max_height margin
+  then Ok ()
+  else Error (Printf.sprintf "Failed to write svg to %s." filename)
 
 let clear t = C.Funcs.svgwriter_clear t

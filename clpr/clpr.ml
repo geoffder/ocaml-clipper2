@@ -21,3 +21,5 @@ module Paths64 = Paths64
 module PolyTree64 = PolyTree64
 module Clipper64 = Clipper64
 module Offset = Offset
+module SvgWriter = SvgWriter
+module SvgReader = SvgReader

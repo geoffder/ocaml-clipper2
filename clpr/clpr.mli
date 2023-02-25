@@ -638,3 +638,68 @@ module Offset : sig
   val error_code : t -> int
   val clear : t -> unit
 end
+
+(** {1 Svg IO} *)
+
+module SvgWriter : sig
+  type t
+
+  (** {1 Construction} *)
+
+  val make : ?precision:int -> unit -> t
+
+  (** {1 Methods} *)
+
+  val fill_rule : t -> fill_rule
+
+  val set_coords_style
+    :  ?font_name:string
+    -> ?font_color:int
+    -> ?font_size:int
+    -> t
+    -> unit
+
+  val add_text
+    :  ?font_color:int
+    -> ?font_size:int
+    -> x:int
+    -> y:int
+    -> t
+    -> string
+    -> unit
+
+  val add_pathd
+    :  ?closed:bool
+    -> ?fill_rule:fill_rule
+    -> ?show_coords:bool
+    -> ?brush_color:int
+    -> ?pen_color:int
+    -> ?pen_width:float
+    -> t
+    -> PathD.t
+    -> unit
+
+  val save
+    :  ?max_width:int
+    -> ?max_height:int
+    -> ?margin:int
+    -> t
+    -> string
+    -> (unit, string) result
+
+  val clear : t -> unit
+end
+
+module SvgReader : sig
+  type t
+
+  (** {1 Construction} *)
+
+  val make : unit -> t
+
+  (** {1 Methods} *)
+
+  val load : t -> string -> unit
+  val get_pathsd : t -> PathsD.t
+  val clear : t -> unit
+end
