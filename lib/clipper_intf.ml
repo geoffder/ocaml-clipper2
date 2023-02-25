@@ -115,6 +115,11 @@ module ConfigTypes = struct
     | `Square (** ends extend the offset amount while being {i squared off} *)
     | `Round (** ends extend the offset amount while being {i rounded off} *)
     ]
+
+  type color =
+    [ `Black
+    | `Hex of int
+    ]
 end
 
 module type Config = sig
@@ -524,6 +529,32 @@ module type S = sig
        Determine whether the point [p] is inside, outside, or on the border of
        [t]. *)
   val point_inside : path -> v -> [> `Inside | `OnBorder | `Outside ]
+
+  module Svg : sig
+    type artist
+
+    val text : ?size:int -> ?color:color -> v -> string -> artist
+
+    val artist
+      :  ?closed:bool
+      -> ?fill_rule:fill_rule
+      -> ?show_coords:bool
+      -> ?width:float
+      -> ?brush:color
+      -> ?pen:color
+      -> ('cpp, 'ctr) t
+      -> artist
+
+    val write
+      :  ?max_width:int
+      -> ?max_height:int
+      -> ?margin:int
+      -> string
+      -> artist list
+      -> (unit, string) result
+
+    val read : string -> paths
+  end
 end
 
 module type Intf = sig

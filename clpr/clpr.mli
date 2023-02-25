@@ -168,12 +168,13 @@ module PathsD : sig
        of open paths or polygons. *)
   type t = pathsd
 
-  (** {1 Construction} *)
+  (** {1 Construction / Conversion} *)
 
   val make : unit -> t
   val of_tups : (float * float) list list -> t
   val add_path : t -> PathD.t -> unit
   val of_path : PathD.t -> t
+  val to_paths64 : ?sx:float -> ?sy:float -> t -> (paths64, string) result
 
   (** {1 Access} *)
 
@@ -668,6 +669,17 @@ module SvgWriter : sig
     -> string
     -> unit
 
+  val add_path64
+    :  ?closed:bool
+    -> ?fill_rule:fill_rule
+    -> ?show_coords:bool
+    -> ?brush_color:int
+    -> ?pen_color:int
+    -> ?pen_width:float
+    -> t
+    -> Path64.t
+    -> unit
+
   val add_pathd
     :  ?closed:bool
     -> ?fill_rule:fill_rule
@@ -677,6 +689,28 @@ module SvgWriter : sig
     -> ?pen_width:float
     -> t
     -> PathD.t
+    -> unit
+
+  val add_paths64
+    :  ?closed:bool
+    -> ?fill_rule:fill_rule
+    -> ?show_coords:bool
+    -> ?brush_color:int
+    -> ?pen_color:int
+    -> ?pen_width:float
+    -> t
+    -> Paths64.t
+    -> unit
+
+  val add_pathsd
+    :  ?closed:bool
+    -> ?fill_rule:fill_rule
+    -> ?show_coords:bool
+    -> ?brush_color:int
+    -> ?pen_color:int
+    -> ?pen_width:float
+    -> t
+    -> PathsD.t
     -> unit
 
   val save

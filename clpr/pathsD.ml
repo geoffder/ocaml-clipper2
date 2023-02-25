@@ -43,6 +43,14 @@ let get t i j =
   then unsafe_get t i j
   else invalid_arg "PathsD.get: out of bounds access"
 
+let to_paths64 ?(sx = 1.) ?(sy = 1.) t =
+  let buf, ps = Paths64_0.alloc ()
+  and err = Ctypes.CArray.(start @@ make Ctypes.int 1) in
+  let _ = C.Funcs.scale_pathsd_to_paths64 buf t sx sy err in
+  if Ctypes.(!@err) = 0
+  then Ok ps
+  else Error (Printf.sprintf "PathsD.to_paths64: failed with code %i" Ctypes.(!@err))
+
 let translate t x y =
   let buf, translated = alloc () in
   let _ = C.Funcs.pathsd_translate buf t x y in

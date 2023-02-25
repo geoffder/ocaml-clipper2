@@ -7,12 +7,12 @@
  (deps
   (sandbox always)
   (:runner "helpers/runner.exe")
-  (:scads
+  (:exes
    (glob_files "*.exe")))
  (targets
-  (dir "scads"))
+  (dir "output"))
  (mode promote)
  (action
   (chdir
-   "scads"
-   (run %{runner} %{scads}))))
+   "output"
+   (run %{runner} %{exes}))))

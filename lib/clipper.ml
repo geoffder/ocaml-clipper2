@@ -2,6 +2,10 @@ include Clipper_intf
 include ConfigTypes
 open Clpr
 
+let color_to_hex = function
+  | `Black -> 0x000000
+  | `Hex i -> i
+
 let config ?fill_rule ?join_type ?end_type ?precision ?eps () =
   ( module struct
     let fill_rule = fill_rule
@@ -321,6 +325,69 @@ struct
 
   let minkowski_diff ?closed ?fill_rule ~pattern t =
     minkowski ?closed ?fill_rule ~pattern ~op:`Diff t
+
+  module Svg = struct
+    type artist = A : (SvgWriter.t -> unit) -> artist
+
+    let text ?(size = 11) ?(color = `Black) pos text =
+      A
+        (fun w ->
+          SvgWriter.add_text
+            w
+            ~font_size:size
+            ~font_color:(color_to_hex color)
+            ~x:(Int.of_float @@ V.x pos)
+            ~y:(Int.of_float @@ V.y pos)
+            text )
+
+    let artist
+      (type c l)
+      ?closed
+      ?fill_rule
+      ?show_coords
+      ?width
+      ?(brush = `Black)
+      ?(pen = `Black)
+      (t : (c, l) t)
+      =
+      let brush_color = color_to_hex brush
+      and pen_color = color_to_hex pen in
+      match t with
+      | Path p ->
+        A
+          (fun w ->
+            SvgWriter.add_pathd
+              ?closed
+              ?fill_rule
+              ?show_coords
+              ?pen_width:width
+              ~brush_color
+              ~pen_color
+              w
+              p )
+      | Paths ps ->
+        A
+          (fun w ->
+            SvgWriter.add_pathsd
+              ?closed
+              ?fill_rule
+              ?show_coords
+              ?pen_width:width
+              ~brush_color
+              ~pen_color
+              w
+              ps )
+
+    let write ?max_width ?max_height ?margin filename artists =
+      let w = SvgWriter.make ~precision () in
+      List.iter (fun (A f) -> f w) artists;
+      SvgWriter.save ?max_width ?max_height ?margin w filename
+
+    let read path =
+      let rdr = SvgReader.make () in
+      SvgReader.load rdr path;
+      Paths (SvgReader.get_pathsd rdr)
+  end
 end
 
 module MakeD (V : V with type n := float) (Conf : Config) =
@@ -638,6 +705,69 @@ struct
 
   let minkowski_diff ?closed ?fill_rule ~pattern t =
     minkowski ?closed ?fill_rule ~pattern ~op:`Diff t
+
+  module Svg = struct
+    type artist = A : (SvgWriter.t -> unit) -> artist
+
+    let text ?(size = 11) ?(color = `Black) pos text =
+      A
+        (fun w ->
+          SvgWriter.add_text
+            w
+            ~font_size:size
+            ~font_color:(color_to_hex color)
+            ~x:(Int64.to_int @@ V.x pos)
+            ~y:(Int64.to_int @@ V.y pos)
+            text )
+
+    let artist
+      (type c l)
+      ?closed
+      ?fill_rule
+      ?show_coords
+      ?width
+      ?(brush = `Black)
+      ?(pen = `Black)
+      (t : (c, l) t)
+      =
+      let brush_color = color_to_hex brush
+      and pen_color = color_to_hex pen in
+      match t with
+      | Path p ->
+        A
+          (fun w ->
+            SvgWriter.add_path64
+              ?closed
+              ?fill_rule
+              ?show_coords
+              ?pen_width:width
+              ~brush_color
+              ~pen_color
+              w
+              p )
+      | Paths ps ->
+        A
+          (fun w ->
+            SvgWriter.add_paths64
+              ?closed
+              ?fill_rule
+              ?show_coords
+              ?pen_width:width
+              ~brush_color
+              ~pen_color
+              w
+              ps )
+
+    let write ?max_width ?max_height ?margin filename artists =
+      let w = SvgWriter.make () in
+      List.iter (fun (A f) -> f w) artists;
+      SvgWriter.save ?max_width ?max_height ?margin w filename
+
+    let read path =
+      let rdr = SvgReader.make () in
+      SvgReader.load rdr path;
+      Paths (Result.get_ok @@ PathsD.to_paths64 @@ SvgReader.get_pathsd rdr)
+  end
 end
 
 module Make64 (V : V with type n := int64) (Conf : Config) =

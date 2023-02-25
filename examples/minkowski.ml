@@ -18,3 +18,15 @@ let () =
     |> Scad.ztrans (-3.)
   in
   Scad.to_file "minkowski.scad" (Scad.union [ a; b; c ])
+
+let () =
+  let sq =
+    Poly2.box ~center:true ~thickness:(v2 2. 2.) (v2 6. 6.)
+    |> Poly2.to_list
+    |> List.map (List.map V2.to_tup)
+    |> Clpr.PathsD.of_tups
+  and pattern = Clpr.PathD.of_tups @@ List.map V2.to_tup @@ Path2.circle ~fn:32 1. in
+  let ps = Clpr.PathsD.minkowski_sum ~pattern sq
+  and w = Clpr.SvgWriter.make () in
+  Clpr.SvgWriter.add_pathsd w ps;
+  Result.get_ok @@ Clpr.SvgWriter.save w "minkowski.png"

@@ -326,6 +326,48 @@ module Functions (F : Ctypes.FOREIGN) = struct
       "clipper_pathsd_to_points"
       (ptr (ptr void) @-> ptr PathsD.t @-> returning (ptr (ptr PointD.t)))
 
+  (** {1 Path Numeric Conversions} *)
+
+  let scale_path64_to_pathd =
+    foreign
+      "clipper_scale_path64_to_pathd"
+      ( ptr void
+      @-> ptr Path64.t
+      @-> float
+      @-> float
+      @-> ptr int
+      @-> returning (ptr PathD.t) )
+
+  let scale_pathd_to_path64 =
+    foreign
+      "clipper_scale_pathd_to_path64"
+      ( ptr void
+      @-> ptr PathD.t
+      @-> float
+      @-> float
+      @-> ptr int
+      @-> returning (ptr Path64.t) )
+
+  let scale_paths64_to_pathsd =
+    foreign
+      "clipper_scale_paths64_to_pathsd"
+      ( ptr void
+      @-> ptr Paths64.t
+      @-> float
+      @-> float
+      @-> ptr int
+      @-> returning (ptr PathsD.t) )
+
+  let scale_pathsd_to_paths64 =
+    foreign
+      "clipper_scale_pathsd_to_paths64"
+      ( ptr void
+      @-> ptr PathsD.t
+      @-> float
+      @-> float
+      @-> ptr int
+      @-> returning (ptr Paths64.t) )
+
   (** {1 Path Transformations} *)
 
   let path64_translate =

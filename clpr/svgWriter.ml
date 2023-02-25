@@ -49,20 +49,37 @@ let clip_brush_clr = 0x129C0000
 let clip_pen_clr = 0xCCFFA07A
 let soln_pen_brush_clr = 0x4466FF66
 
-let add_pathd
+let add_p'
   ?(closed = true)
   ?(fill_rule = `NonZero)
   ?(show_coords = false)
   ?(brush_color = subj_brush_clr)
   ?(pen_color = subj_pen_clr)
   ?(pen_width = 0.8)
+  f
   t
   p
   =
   let fr = FillRule.make fill_rule
   and brush = Unsigned.UInt32.of_int brush_color
   and pen = Unsigned.UInt32.of_int pen_color in
-  C.Funcs.svgwriter_add_pathd t p (not closed) fr brush pen pen_width show_coords
+  f t p (not closed) fr brush pen pen_width show_coords
+
+let add_path64 ?closed ?fill_rule ?show_coords ?brush_color ?pen_color ?pen_width t p =
+  let f = C.Funcs.svgwriter_add_path64 in
+  add_p' ?closed ?fill_rule ?show_coords ?brush_color ?pen_color ?pen_width f t p
+
+let add_pathd ?closed ?fill_rule ?show_coords ?brush_color ?pen_color ?pen_width t p =
+  let f = C.Funcs.svgwriter_add_pathd in
+  add_p' ?closed ?fill_rule ?show_coords ?brush_color ?pen_color ?pen_width f t p
+
+let add_paths64 ?closed ?fill_rule ?show_coords ?brush_color ?pen_color ?pen_width t p =
+  let f = C.Funcs.svgwriter_add_paths64 in
+  add_p' ?closed ?fill_rule ?show_coords ?brush_color ?pen_color ?pen_width f t p
+
+let add_pathsd ?closed ?fill_rule ?show_coords ?brush_color ?pen_color ?pen_width t p =
+  let f = C.Funcs.svgwriter_add_pathsd in
+  add_p' ?closed ?fill_rule ?show_coords ?brush_color ?pen_color ?pen_width f t p
 
 let save ?(max_width = 0) ?(max_height = 0) ?(margin = 0) t filename =
   let name = string_to_ptr Ctypes.char filename in
