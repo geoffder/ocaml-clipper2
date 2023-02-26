@@ -535,7 +535,7 @@ module type S = sig
 
     val text : ?size:int -> ?color:color -> v -> string -> artist
 
-    val artist
+    val paint
       :  ?closed:bool
       -> ?fill_rule:fill_rule
       -> ?show_coords:bool

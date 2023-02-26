@@ -2,8 +2,11 @@ include Clipper_intf
 include ConfigTypes
 open Clpr
 
+(* hex with the first two being alpha. Will need to use a pair, or have a type
+   with a constructor instead of polyvariant (kept in the Svg module to avoid
+   namespace polution) *)
 let color_to_hex = function
-  | `Black -> 0x000000
+  | `Black -> 0xFF000000
   | `Hex i -> i
 
 let config ?fill_rule ?join_type ?end_type ?precision ?eps () =
@@ -340,7 +343,7 @@ struct
             ~y:(Int.of_float @@ V.y pos)
             text )
 
-    let artist
+    let paint
       (type c l)
       ?closed
       ?fill_rule
@@ -720,7 +723,7 @@ struct
             ~y:(Int64.to_int @@ V.y pos)
             text )
 
-    let artist
+    let paint
       (type c l)
       ?closed
       ?fill_rule
