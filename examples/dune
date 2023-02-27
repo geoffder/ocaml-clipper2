@@ -1,5 +1,5 @@
 (executables
- (names minkowski)
+ (names minkowski booleans)
  (libraries clipper OCADml OSCADml gg))
 
 (rule

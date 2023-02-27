@@ -350,7 +350,7 @@ struct
     let paint
       (type c l)
       ?closed
-      ?fill_rule
+      ?(fill_rule = fill_rule)
       ?show_coords
       ?width
       ?(brush = color ~alpha:0.1 Blue)
@@ -365,7 +365,7 @@ struct
           (fun w ->
             SvgWriter.add_pathd
               ?closed
-              ?fill_rule
+              ~fill_rule
               ?show_coords
               ?pen_width:width
               ~brush_color
@@ -377,13 +377,30 @@ struct
           (fun w ->
             SvgWriter.add_pathsd
               ?closed
-              ?fill_rule
+              ~fill_rule
               ?show_coords
               ?pen_width:width
               ~brush_color
               ~pen_color
               w
               ps )
+
+    let subject ?(closed = true) ?fill_rule t =
+      let brush = color ~alpha:0.1 (Hex 0x00009C)
+      and pen = color ~alpha:0.8 (Hex 0xB3B3DA)
+      and width = if closed then 0.8 else 1.3 in
+      paint ~closed ?fill_rule ~brush ~pen ~width t
+
+    let clip ?fill_rule t =
+      let brush = color ~alpha:0.07 (Hex 0x9C0000)
+      and pen = color ~alpha:0.8 (Hex 0xFFA07A) in
+      paint ~closed:true ?fill_rule ~brush ~pen ~width:0.8 t
+
+    let solution ?(closed = true) ?fill_rule ?show_coords t =
+      let brush = color ~alpha:0.25 (Hex 0x66FF66)
+      and pen = color ~alpha:1. (Hex (if closed then 0x003300 else 0x006600))
+      and width = if closed then 1.2 else 1.8 in
+      paint ~closed ?fill_rule ?show_coords ~brush ~pen ~width t
 
     let write ?max_width ?max_height ?margin ?coords filename artists =
       let w = SvgWriter.make ~precision () in
@@ -746,7 +763,7 @@ struct
     let paint
       (type c l)
       ?closed
-      ?fill_rule
+      ?(fill_rule = fill_rule)
       ?show_coords
       ?width
       ?(brush = color ~alpha:0.1 Blue)
@@ -761,7 +778,7 @@ struct
           (fun w ->
             SvgWriter.add_path64
               ?closed
-              ?fill_rule
+              ~fill_rule
               ?show_coords
               ?pen_width:width
               ~brush_color
@@ -773,13 +790,30 @@ struct
           (fun w ->
             SvgWriter.add_paths64
               ?closed
-              ?fill_rule
+              ~fill_rule
               ?show_coords
               ?pen_width:width
               ~brush_color
               ~pen_color
               w
               ps )
+
+    let subject ?(closed = true) ?fill_rule t =
+      let brush = color ~alpha:0.1 (Hex 0x00009C)
+      and pen = color ~alpha:0.8 (Hex 0xB3B3DA)
+      and width = if closed then 0.8 else 1.3 in
+      paint ~closed ?fill_rule ~brush ~pen ~width t
+
+    let clip ?fill_rule t =
+      let brush = color ~alpha:0.07 (Hex 0x9C0000)
+      and pen = color ~alpha:0.8 (Hex 0xFFA07A) in
+      paint ~closed:true ?fill_rule ~brush ~pen ~width:0.8 t
+
+    let solution ?(closed = true) ?fill_rule ?show_coords t =
+      let brush = color ~alpha:0.25 (Hex 0x66FF66)
+      and pen = color ~alpha:1. (Hex (if closed then 0x003300 else 0x006600))
+      and width = if closed then 1.2 else 1.8 in
+      paint ~closed ?fill_rule ?show_coords ~brush ~pen ~width t
 
     let write ?max_width ?max_height ?margin ?coords filename artists =
       let w = SvgWriter.make () in

@@ -29,10 +29,10 @@ let () =
   let ps = Clpr.PathsD.minkowski_sum ~pattern sq
   and w = Clpr.SvgWriter.make () in
   Clpr.SvgWriter.add_pathsd w ps;
-  Result.get_ok @@ Clpr.SvgWriter.save w "minkowski.png"
+  Result.get_ok @@ Clpr.SvgWriter.save w "minkowski_clpr.png"
 
 let () =
   let sq = C.of_poly @@ Poly2.box ~center:true ~thickness:(v2 2. 2.) (v2 6. 6.)
   and pattern = C.path @@ Path2.circle ~fn:32 1. in
   let ps = C.minkowski_sum ~pattern sq in
-  Result.get_ok @@ C.Svg.write "minkowski__.png" C.Svg.[ paint ps ]
+  Result.get_ok @@ C.Svg.(write "minkowski.png" [ paint ~brush:(color ~alpha:1. Navy) ps ])

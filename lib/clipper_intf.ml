@@ -526,7 +526,12 @@ module type S = sig
   val point_inside : path -> v -> [> `Inside | `OnBorder | `Outside ]
 
   module Svg : sig
+    (** {1 Configuration Types} *)
+
+    (** Describing colours with which to paint paths and draw text. *)
     module Color : sig
+      (** Basic colours options, along with [Hex 0xFFFFFF] and [RGB (r, g, b)]
+             constructors for arbitrary colour specification *)
       type color =
         | Black
         | White
@@ -554,17 +559,14 @@ module type S = sig
       val make : ?alpha:float -> color -> t
     end
 
-    (** coordinate label styling (font, color, and size) *)
-    type coords
-
-    (** An element to be written to svg (text, paths, or filled polygons) *)
-    type artist
-
     (** [color ?alpha c]
 
           Create a colour with the transparency [alpha] (default [= 0.8]).
           Alias to {!Color.make}. *)
     val color : ?alpha:float -> Color.color -> Color.t
+
+    (** coordinate label styling (font, color, and size) *)
+    type coords
 
     (** [coords ?font ?size ?color ()]
 
@@ -573,11 +575,23 @@ module type S = sig
           to 11pt Verdana in solid black. *)
     val coords : ?font:string -> ?size:int -> ?color:Color.t -> unit -> coords
 
+    (** {1 Artists}
+
+        Declarative construction of artists to be applied to an svg in the
+        order that they are supplied to {!write}. *)
+
+    (** An element to be written to svg (text, paths, or filled polygons) *)
+    type artist
+
+    (** {2 Drawing Text} *)
+
     (** [text ?size ?color v s]
 
           Draw the text [s] with the given [color] (default [Black]) and [size]
           (default [11]) at the position [v]. *)
     val text : ?size:int -> ?color:Color.t -> v -> string -> artist
+
+    (** {2 Painting Paths} *)
 
     (** [paint ?closed ?fill_rule ?show_coords ?width ?brush ?pen path]
 
@@ -595,6 +609,30 @@ module type S = sig
       -> ?pen:Color.t
       -> ('cpp, 'ctr) t
       -> artist
+
+    (** {3 Debug Helpers} *)
+
+    (** [subject ?closed ?fill_rule path]
+
+          {!paint} subject path(s) with default Clipper2 pen and brush settings. *)
+    val subject : ?closed:bool -> ?fill_rule:fill_rule -> ('cpp, 'ctr) t -> artist
+
+    (** [clip ?fill_rule path]
+
+          {!paint} clipping path(s) with default Clipper2 pen and brush settings. *)
+    val clip : ?fill_rule:fill_rule -> ('cpp, 'ctr) t -> artist
+
+    (** [solution ?closed ?fill_rule ?show_coords path]
+
+          {!paint} solution path(s) with default Clipper2 pen and brush settings. *)
+    val solution
+      :  ?closed:bool
+      -> ?fill_rule:fill_rule
+      -> ?show_coords:bool
+      -> ('cpp, 'ctr) t
+      -> artist
+
+    (** {1 IO} *)
 
     (** [write path artists]
 
