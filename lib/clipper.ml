@@ -2,13 +2,6 @@ include Clipper_intf
 include ConfigTypes
 open Clpr
 
-(* hex with the first two being alpha. Will need to use a pair, or have a type
-   with a constructor instead of polyvariant (kept in the Svg module to avoid
-   namespace polution) *)
-let color_to_hex = function
-  | `Black -> 0xFF000000
-  | `Hex i -> i
-
 let config ?fill_rule ?join_type ?end_type ?precision ?eps () =
   ( module struct
     let fill_rule = fill_rule
@@ -330,15 +323,26 @@ struct
     minkowski ?closed ?fill_rule ~pattern ~op:`Diff t
 
   module Svg = struct
+    module Color = Color
+
+    type coords =
+      { font : string option
+      ; color : Color.t option
+      ; size : int option
+      }
+
     type artist = A : (SvgWriter.t -> unit) -> artist
 
-    let text ?(size = 11) ?(color = `Black) pos text =
+    let color ?alpha c = Color.make ?alpha c
+    let coords ?font ?size ?color () = { font; color; size }
+
+    let text ?(size = 11) ?(color = color ~alpha:1. Black) pos text =
       A
         (fun w ->
           SvgWriter.add_text
             w
             ~font_size:size
-            ~font_color:(color_to_hex color)
+            ~font_color:(Color.to_int color)
             ~x:(Int.of_float @@ V.x pos)
             ~y:(Int.of_float @@ V.y pos)
             text )
@@ -349,12 +353,12 @@ struct
       ?fill_rule
       ?show_coords
       ?width
-      ?(brush = `Black)
-      ?(pen = `Black)
+      ?(brush = color ~alpha:0.1 Blue)
+      ?(pen = color ~alpha:0.8 (RGB (179, 179, 218)))
       (t : (c, l) t)
       =
-      let brush_color = color_to_hex brush
-      and pen_color = color_to_hex pen in
+      let brush_color = Color.to_int brush
+      and pen_color = Color.to_int pen in
       match t with
       | Path p ->
         A
@@ -381,8 +385,13 @@ struct
               w
               ps )
 
-    let write ?max_width ?max_height ?margin filename artists =
+    let write ?max_width ?max_height ?margin ?coords filename artists =
       let w = SvgWriter.make ~precision () in
+      Option.iter
+        (fun { font = font_name; size = font_size; color } ->
+          let font_color = Option.map Color.to_int color in
+          SvgWriter.set_coords_style ?font_name ?font_size ?font_color w )
+        coords;
       List.iter (fun (A f) -> f w) artists;
       SvgWriter.save ?max_width ?max_height ?margin w filename
 
@@ -710,15 +719,26 @@ struct
     minkowski ?closed ?fill_rule ~pattern ~op:`Diff t
 
   module Svg = struct
+    module Color = Color
+
+    type coords =
+      { font : string option
+      ; color : Color.t option
+      ; size : int option
+      }
+
     type artist = A : (SvgWriter.t -> unit) -> artist
 
-    let text ?(size = 11) ?(color = `Black) pos text =
+    let color ?alpha c = Color.make ?alpha c
+    let coords ?font ?size ?color () = { font; color; size }
+
+    let text ?(size = 11) ?(color = color ~alpha:1. Black) pos text =
       A
         (fun w ->
           SvgWriter.add_text
             w
             ~font_size:size
-            ~font_color:(color_to_hex color)
+            ~font_color:(Color.to_int color)
             ~x:(Int64.to_int @@ V.x pos)
             ~y:(Int64.to_int @@ V.y pos)
             text )
@@ -729,12 +749,12 @@ struct
       ?fill_rule
       ?show_coords
       ?width
-      ?(brush = `Black)
-      ?(pen = `Black)
+      ?(brush = color ~alpha:0.1 Blue)
+      ?(pen = color ~alpha:0.8 (RGB (179, 179, 218)))
       (t : (c, l) t)
       =
-      let brush_color = color_to_hex brush
-      and pen_color = color_to_hex pen in
+      let brush_color = Color.to_int brush
+      and pen_color = Color.to_int pen in
       match t with
       | Path p ->
         A
@@ -761,8 +781,13 @@ struct
               w
               ps )
 
-    let write ?max_width ?max_height ?margin filename artists =
+    let write ?max_width ?max_height ?margin ?coords filename artists =
       let w = SvgWriter.make () in
+      Option.iter
+        (fun { font = font_name; size = font_size; color } ->
+          let font_color = Option.map Color.to_int color in
+          SvgWriter.set_coords_style ?font_name ?font_size ?font_color w )
+        coords;
       List.iter (fun (A f) -> f w) artists;
       SvgWriter.save ?max_width ?max_height ?margin w filename
 

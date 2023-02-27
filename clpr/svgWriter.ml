@@ -39,10 +39,7 @@ let add_text ?(font_color = 0xFF000000) ?(font_size = 11) ~x ~y t text =
   and sz = Unsigned.UInt32.of_int font_size in
   C.Funcs.svgwriter_add_text t txt clr sz x y
 
-(* TODO: make convenient color variant that translates to colour as well as an
-    arbitrary option. Should brush and pen be grouped in a record? Would make
-    subject/clip/solution defaults simpler. *)
-
+(* defaults from Clipper Svg utils *)
 let subj_brush_clr = 0x1800009C
 let subj_pen_clr = 0xCCB3B3DA
 let clip_brush_clr = 0x129C0000

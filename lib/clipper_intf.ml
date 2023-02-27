@@ -115,11 +115,6 @@ module ConfigTypes = struct
     | `Square (** ends extend the offset amount while being {i squared off} *)
     | `Round (** ends extend the offset amount while being {i rounded off} *)
     ]
-
-  type color =
-    [ `Black
-    | `Hex of int
-    ]
 end
 
 module type Config = sig
@@ -531,28 +526,92 @@ module type S = sig
   val point_inside : path -> v -> [> `Inside | `OnBorder | `Outside ]
 
   module Svg : sig
+    module Color : sig
+      type color =
+        | Black
+        | White
+        | Blue
+        | Gray
+        | Green
+        | Purple
+        | Red
+        | Lime
+        | Yellow
+        | Cyan
+        | Magenta
+        | Silver
+        | Teal
+        | Navy
+        | Hex of int (** 6-digit hex code (lacking alpha) *)
+        | RGB of int * int * int
+
+      (** A colour with transparency (alpha) value. *)
+      type t
+
+      (** [make ?alpha c]
+
+             Create a colour with the transparency [alpha] (default [= 0.8]). *)
+      val make : ?alpha:float -> color -> t
+    end
+
+    (** coordinate label styling (font, color, and size) *)
+    type coords
+
+    (** An element to be written to svg (text, paths, or filled polygons) *)
     type artist
 
-    val text : ?size:int -> ?color:color -> v -> string -> artist
+    (** [color ?alpha c]
 
+          Create a colour with the transparency [alpha] (default [= 0.8]).
+          Alias to {!Color.make}. *)
+    val color : ?alpha:float -> Color.color -> Color.t
+
+    (** [coords ?font ?size ?color ()]
+
+          Create a coordinate display style to be given to {!write}, which will
+          apply to any {!paint} artists with [show_coords=true]. Defaulting
+          to 11pt Verdana in solid black. *)
+    val coords : ?font:string -> ?size:int -> ?color:Color.t -> unit -> coords
+
+    (** [text ?size ?color v s]
+
+          Draw the text [s] with the given [color] (default [Black]) and [size]
+          (default [11]) at the position [v]. *)
+    val text : ?size:int -> ?color:Color.t -> v -> string -> artist
+
+    (** [paint ?closed ?fill_rule ?show_coords ?width ?brush ?pen path]
+
+         Draw a [path] or filled polygon (depending on [closed], which defaults to
+         [true], and [fill_rule] (defaults to [`NonZero])). [width] and [pen]
+         set the thickness and color of the outline respectively, while [brush]
+         governs the filling color. Point coordinates will be drawn if a
+         [show_coords] is provided, otherwise they will be left off. *)
     val paint
       :  ?closed:bool
       -> ?fill_rule:fill_rule
       -> ?show_coords:bool
       -> ?width:float
-      -> ?brush:color
-      -> ?pen:color
+      -> ?brush:Color.t
+      -> ?pen:Color.t
       -> ('cpp, 'ctr) t
       -> artist
 
+    (** [write path artists]
+
+          Write the list of [artists] (see {!text} and {!paint}) in sequence to
+          an svg file at [path]. *)
     val write
       :  ?max_width:int
       -> ?max_height:int
       -> ?margin:int
+      -> ?coords:coords
       -> string
       -> artist list
       -> (unit, string) result
 
+    (** [read filename]
+
+          Read paths from from the svg file at the given path. *)
     val read : string -> paths
   end
 end
