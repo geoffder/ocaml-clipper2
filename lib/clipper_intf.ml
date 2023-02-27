@@ -525,6 +525,10 @@ module type S = sig
        [t]. *)
   val point_inside : path -> v -> [> `Inside | `OnBorder | `Outside ]
 
+  (** {1 Export} *)
+
+  (** Utilities for writing (and reading) simple SVGs, for use in debugging and
+      quick visualization. *)
   module Svg : sig
     (** {1 Configuration Types} *)
 
