@@ -174,7 +174,8 @@ module PathsD : sig
   val of_tups : (float * float) list list -> t
   val add_path : t -> PathD.t -> unit
   val of_path : PathD.t -> t
-  val to_paths64 : ?sx:float -> ?sy:float -> t -> (paths64, string) result
+  val to_paths64 : t -> paths64
+  val scale_to_paths64 : ?sx:float -> ?sy:float -> t -> (paths64, string) result
 
   (** {1 Access} *)
 

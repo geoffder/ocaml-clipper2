@@ -328,6 +328,26 @@ module Functions (F : Ctypes.FOREIGN) = struct
 
   (** {1 Path Numeric Conversions} *)
 
+  let path64_to_pathd =
+    foreign
+      "clipper_path64_to_pathd"
+      (ptr void @-> ptr Path64.t @-> returning (ptr PathD.t))
+
+  let pathd_to_path64 =
+    foreign
+      "clipper_pathd_to_path64"
+      (ptr void @-> ptr PathD.t @-> returning (ptr Path64.t))
+
+  let paths64_to_pathsd =
+    foreign
+      "clipper_paths64_to_pathsd"
+      (ptr void @-> ptr Paths64.t @-> returning (ptr PathsD.t))
+
+  let pathsd_to_paths64 =
+    foreign
+      "clipper_pathsd_to_paths64"
+      (ptr void @-> ptr PathsD.t @-> returning (ptr Paths64.t))
+
   let scale_path64_to_pathd =
     foreign
       "clipper_scale_path64_to_pathd"

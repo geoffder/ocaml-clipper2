@@ -828,7 +828,7 @@ struct
     let read path =
       let rdr = SvgReader.make () in
       SvgReader.load rdr path;
-      Paths (Result.get_ok @@ PathsD.to_paths64 @@ SvgReader.get_pathsd rdr)
+      Paths (PathsD.to_paths64 @@ SvgReader.get_pathsd rdr)
   end
 end
 
