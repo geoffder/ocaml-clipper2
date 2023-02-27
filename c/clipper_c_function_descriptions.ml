@@ -1,9 +1,9 @@
 module Functions (F : Ctypes.FOREIGN) = struct
   open Ctypes
   open F
-  open Clipper_c_types
+  open Types
 
-  (* Boolean Operations *)
+  (** {1 Boolean Operations} *)
 
   let paths64_boolean_op =
     foreign
@@ -123,7 +123,7 @@ module Functions (F : Ctypes.FOREIGN) = struct
       @-> int
       @-> returning (ptr PathsD.t) )
 
-  (* Path Offsetting *)
+  (** {1 Path Offsetting} *)
 
   let paths64_inflate =
     foreign
@@ -148,7 +148,7 @@ module Functions (F : Ctypes.FOREIGN) = struct
       @-> int
       @-> returning (ptr PathsD.t) )
 
-  (* Rect Clipping *)
+  (** {1 Rect Clipping} *)
 
   let path64_bounds =
     foreign
@@ -206,7 +206,7 @@ module Functions (F : Ctypes.FOREIGN) = struct
       "clipper_pathsd_rect_clip_lines"
       (ptr void @-> ptr RectD.t @-> ptr PathsD.t @-> int @-> returning (ptr PathsD.t))
 
-  (* Path Constructors *)
+  (** {1 Path Constructors} *)
 
   let path64 = foreign "clipper_path64" (ptr void @-> returning (ptr Path64.t))
   let pathd = foreign "clipper_pathd" (ptr void @-> returning (ptr PathD.t))
@@ -256,7 +256,7 @@ module Functions (F : Ctypes.FOREIGN) = struct
   let pathsd_add_path =
     foreign "clipper_pathsd_add_path" (ptr PathsD.t @-> ptr PathD.t @-> returning void)
 
-  (* Path Conversions (to C) *)
+  (** {1 Path Conversions (to C)} *)
 
   let path64_length = foreign "clipper_path64_length" (ptr Path64.t @-> returning size_t)
   let pathd_length = foreign "clipper_pathd_length" (ptr PathD.t @-> returning size_t)
@@ -326,7 +326,69 @@ module Functions (F : Ctypes.FOREIGN) = struct
       "clipper_pathsd_to_points"
       (ptr (ptr void) @-> ptr PathsD.t @-> returning (ptr (ptr PointD.t)))
 
-  (* Path Transformations *)
+  (** {1 Path Numeric Conversions} *)
+
+  let path64_to_pathd =
+    foreign
+      "clipper_path64_to_pathd"
+      (ptr void @-> ptr Path64.t @-> returning (ptr PathD.t))
+
+  let pathd_to_path64 =
+    foreign
+      "clipper_pathd_to_path64"
+      (ptr void @-> ptr PathD.t @-> returning (ptr Path64.t))
+
+  let paths64_to_pathsd =
+    foreign
+      "clipper_paths64_to_pathsd"
+      (ptr void @-> ptr Paths64.t @-> returning (ptr PathsD.t))
+
+  let pathsd_to_paths64 =
+    foreign
+      "clipper_pathsd_to_paths64"
+      (ptr void @-> ptr PathsD.t @-> returning (ptr Paths64.t))
+
+  let scale_path64_to_pathd =
+    foreign
+      "clipper_scale_path64_to_pathd"
+      ( ptr void
+      @-> ptr Path64.t
+      @-> float
+      @-> float
+      @-> ptr int
+      @-> returning (ptr PathD.t) )
+
+  let scale_pathd_to_path64 =
+    foreign
+      "clipper_scale_pathd_to_path64"
+      ( ptr void
+      @-> ptr PathD.t
+      @-> float
+      @-> float
+      @-> ptr int
+      @-> returning (ptr Path64.t) )
+
+  let scale_paths64_to_pathsd =
+    foreign
+      "clipper_scale_paths64_to_pathsd"
+      ( ptr void
+      @-> ptr Paths64.t
+      @-> float
+      @-> float
+      @-> ptr int
+      @-> returning (ptr PathsD.t) )
+
+  let scale_pathsd_to_paths64 =
+    foreign
+      "clipper_scale_pathsd_to_paths64"
+      ( ptr void
+      @-> ptr PathsD.t
+      @-> float
+      @-> float
+      @-> ptr int
+      @-> returning (ptr Paths64.t) )
+
+  (** {1 Path Transformations} *)
 
   let path64_translate =
     foreign
@@ -438,7 +500,7 @@ module Functions (F : Ctypes.FOREIGN) = struct
       "clipper_pathsd_ramer_douglas_peucker"
       (ptr void @-> ptr PathsD.t @-> double @-> returning (ptr PathsD.t))
 
-  (* Minkowski *)
+  (** {1 Minkowski} *)
 
   let path64_minkowski_sum =
     foreign
@@ -470,7 +532,49 @@ module Functions (F : Ctypes.FOREIGN) = struct
       @-> int
       @-> returning (ptr PathsD.t) )
 
-  (* Geometry *)
+  let paths64_minkowski_sum =
+    foreign
+      "clipper_paths64_minkowski_sum"
+      ( ptr void
+      @-> ptr Path64.t
+      @-> ptr Paths64.t
+      @-> bool
+      @-> FillRule.t
+      @-> returning (ptr Paths64.t) )
+
+  let pathsd_minkowski_sum =
+    foreign
+      "clipper_pathsd_minkowski_sum"
+      ( ptr void
+      @-> ptr PathD.t
+      @-> ptr PathsD.t
+      @-> bool
+      @-> int
+      @-> FillRule.t
+      @-> returning (ptr PathsD.t) )
+
+  let paths64_minkowski_diff =
+    foreign
+      "clipper_paths64_minkowski_diff"
+      ( ptr void
+      @-> ptr Path64.t
+      @-> ptr Paths64.t
+      @-> bool
+      @-> FillRule.t
+      @-> returning (ptr Paths64.t) )
+
+  let pathsd_minkowski_diff =
+    foreign
+      "clipper_pathsd_minkowski_diff"
+      ( ptr void
+      @-> ptr PathD.t
+      @-> ptr PathsD.t
+      @-> bool
+      @-> int
+      @-> FillRule.t
+      @-> returning (ptr PathsD.t) )
+
+  (** {1 Geometry} *)
 
   let point64_distance =
     foreign "clipper_point64_distance" (Point64.t @-> Point64.t @-> returning double)
@@ -509,9 +613,9 @@ module Functions (F : Ctypes.FOREIGN) = struct
   let path64_is_positive =
     foreign "clipper_path64_is_positive" (ptr Path64.t @-> returning bool)
 
-  (* Class Interfaces *)
+  (** {1 PolyTree Class} *)
 
-  (* PolyTree Constructors *)
+  (** {2 constructors} *)
 
   let polytree64 =
     foreign
@@ -523,7 +627,7 @@ module Functions (F : Ctypes.FOREIGN) = struct
       "clipper_polytreed"
       (ptr void @-> ptr PolyTreeD.t @-> returning (ptr PolyTreeD.t))
 
-  (* PolyTree64 Methods *)
+  (** {2 int64 methods} *)
 
   let polytree64_parent =
     foreign "clipper_polytree64_parent" (ptr PolyTree64.t @-> returning (ptr PolyTree64.t))
@@ -548,7 +652,7 @@ module Functions (F : Ctypes.FOREIGN) = struct
     foreign "clipper_polytree64_level" (ptr PolyTree64.t @-> returning int)
 
   let polytree64_is_hole =
-    foreign "clipper_polytree64_is_hole" (ptr PolyTree64.t @-> returning int)
+    foreign "clipper_polytree64_is_hole" (ptr PolyTree64.t @-> returning bool)
 
   let polytree64_polygon =
     foreign
@@ -568,7 +672,7 @@ module Functions (F : Ctypes.FOREIGN) = struct
       "clipper_polytree64_fully_contains_children"
       (ptr PolyTree64.t @-> returning bool)
 
-  (* PolyTreeD Methods *)
+  (** {2 decimal methods} *)
 
   let polytreed_parent =
     foreign "clipper_polytreed_parent" (ptr PolyTreeD.t @-> returning (ptr PolyTreeD.t))
@@ -593,7 +697,7 @@ module Functions (F : Ctypes.FOREIGN) = struct
     foreign "clipper_polytreed_level" (ptr PolyTreeD.t @-> returning int)
 
   let polytreed_is_hole =
-    foreign "clipper_polytreed_is_hole" (ptr PolyTreeD.t @-> returning int)
+    foreign "clipper_polytreed_is_hole" (ptr PolyTreeD.t @-> returning bool)
 
   let polytreed_polygon =
     foreign
@@ -616,7 +720,9 @@ module Functions (F : Ctypes.FOREIGN) = struct
   let polytreed_inv_scale =
     foreign "clipper_polytreed_inv_scale" (ptr PolyTreeD.t @-> returning double)
 
-  (* Rect Constructors *)
+  (** {1 Rect Class} *)
+
+  (** {2 constructors} *)
 
   let rect64 =
     foreign
@@ -633,7 +739,7 @@ module Functions (F : Ctypes.FOREIGN) = struct
       "clipper_rectd"
       (ptr void @-> double @-> double @-> double @-> double @-> returning (ptr RectD.t))
 
-  (* Rect64 Methods *)
+  (** {2 int64 methods} *)
 
   let rect64_width = foreign "clipper_rect64_width" (ptr Rect64.t @-> returning int64_t)
   let rect64_height = foreign "clipper_rect64_height" (ptr Rect64.t @-> returning int64_t)
@@ -664,7 +770,7 @@ module Functions (F : Ctypes.FOREIGN) = struct
   let rect64_intersects =
     foreign "clipper_rect64_intersects" (ptr Rect64.t @-> ptr Rect64.t @-> returning bool)
 
-  (* RectD Methods *)
+  (** {2 decimal methods} *)
 
   let rectd_width = foreign "clipper_rectd_width" (ptr RectD.t @-> returning double)
   let rectd_height = foreign "clipper_rectd_height" (ptr RectD.t @-> returning double)
@@ -691,14 +797,16 @@ module Functions (F : Ctypes.FOREIGN) = struct
   let rectd_intersects =
     foreign "clipper_rectd_intersects" (ptr RectD.t @-> ptr RectD.t @-> returning bool)
 
-  (* Clipper Contsructors *)
+  (** {1 Clipper Class} *)
+
+  (** {2 contsructors} *)
 
   let clipper64 = foreign "clipper_clipper64" (ptr void @-> returning (ptr Clipper64.t))
 
   let clipperd =
     foreign "clipper_clipperd" (ptr void @-> int @-> returning (ptr ClipperD.t))
 
-  (* Clipper64 Setters / Getters *)
+  (** {2 int64 accessors} *)
 
   let clipper64_set_preserve_collinear =
     foreign
@@ -719,7 +827,7 @@ module Functions (F : Ctypes.FOREIGN) = struct
   let clipper64_clear =
     foreign "clipper_clipper64_clear" (ptr Clipper64.t @-> returning void)
 
-  (* ClipperD Setters / Getters *)
+  (** {2 decimal accessors} *)
 
   let clipperd_set_preserve_collinear =
     foreign
@@ -739,7 +847,7 @@ module Functions (F : Ctypes.FOREIGN) = struct
 
   let clipperd_clear = foreign "clipper_clipperd_clear" (ptr ClipperD.t @-> returning void)
 
-  (* Clipper64 Methods *)
+  (** {2 int64 methods} *)
 
   let clipper64_add_subject =
     foreign
@@ -785,7 +893,7 @@ module Functions (F : Ctypes.FOREIGN) = struct
       @-> ptr Paths64.t
       @-> returning bool )
 
-  (* ClipperD Methods *)
+  (** {2 decimal methods} *)
 
   let clipperd_add_subject =
     foreign
@@ -827,14 +935,16 @@ module Functions (F : Ctypes.FOREIGN) = struct
       @-> ptr PathsD.t
       @-> returning bool )
 
-  (* Offset Contsructors *)
+  (** {1 Offset Class} *)
+
+  (** {2 constructors} *)
 
   let offset =
     foreign
       "clipper_clipperoffset"
       (ptr void @-> double @-> double @-> bool @-> bool @-> returning (ptr Offset.t))
 
-  (* Offset Setters / Getters *)
+  (** {2 accessors} *)
 
   let offset_set_miter_limit =
     foreign
@@ -876,7 +986,7 @@ module Functions (F : Ctypes.FOREIGN) = struct
   let offset_clear =
     foreign "clipper_clipperoffset_clear" (ptr Offset.t @-> returning void)
 
-  (* Offset Methods *)
+  (** {2 methods} *)
 
   let offset_add_pathd =
     foreign
@@ -903,7 +1013,120 @@ module Functions (F : Ctypes.FOREIGN) = struct
       "clipper_clipperoffset_execute"
       (ptr void @-> ptr Offset.t @-> double @-> returning (ptr Paths64.t))
 
-  (* memory size *)
+  (** {1 SvgWriter Class} *)
+
+  (** {2 contsructors} *)
+
+  let svgwriter =
+    foreign "clipper_svgwriter" (ptr void @-> int @-> returning (ptr SvgWriter.t))
+
+  (** {2 accessors / setters} *)
+
+  let svgwriter_fill_rule =
+    foreign "clipper_svgwriter_fill_rule" (ptr SvgWriter.t @-> returning FillRule.t)
+
+  let svgwriter_set_coords_style =
+    foreign
+      "clipper_svgwriter_set_coords_style"
+      (ptr SvgWriter.t @-> ptr char @-> uint32_t @-> uint32_t @-> returning void)
+
+  (** {2 methods} *)
+
+  let svgwriter_add_text =
+    foreign
+      "clipper_svgwriter_add_text"
+      ( ptr SvgWriter.t
+      @-> ptr char
+      @-> uint32_t
+      @-> uint32_t
+      @-> int
+      @-> int
+      @-> returning void )
+
+  let svgwriter_add_path64 =
+    foreign
+      "clipper_svgwriter_add_path64"
+      ( ptr SvgWriter.t
+      @-> ptr Path64.t
+      @-> bool
+      @-> FillRule.t
+      @-> uint32_t
+      @-> uint32_t
+      @-> double
+      @-> bool
+      @-> returning void )
+
+  let svgwriter_add_pathd =
+    foreign
+      "clipper_svgwriter_add_pathd"
+      ( ptr SvgWriter.t
+      @-> ptr PathD.t
+      @-> bool
+      @-> FillRule.t
+      @-> uint32_t
+      @-> uint32_t
+      @-> double
+      @-> bool
+      @-> returning void )
+
+  let svgwriter_add_paths64 =
+    foreign
+      "clipper_svgwriter_add_paths64"
+      ( ptr SvgWriter.t
+      @-> ptr Paths64.t
+      @-> bool
+      @-> FillRule.t
+      @-> uint32_t
+      @-> uint32_t
+      @-> double
+      @-> bool
+      @-> returning void )
+
+  let svgwriter_add_pathsd =
+    foreign
+      "clipper_svgwriter_add_pathsd"
+      ( ptr SvgWriter.t
+      @-> ptr PathsD.t
+      @-> bool
+      @-> FillRule.t
+      @-> uint32_t
+      @-> uint32_t
+      @-> double
+      @-> bool
+      @-> returning void )
+
+  let svgwriter_save_to_file =
+    foreign
+      "clipper_svgwriter_save_to_file"
+      (ptr SvgWriter.t @-> ptr char @-> int @-> int @-> int @-> returning bool)
+
+  let svgwriter_clear =
+    foreign "clipper_svgwriter_clear" (ptr SvgWriter.t @-> returning void)
+
+  (** {1 SvgReader Class} *)
+
+  (** {2 contsructors} *)
+
+  let svgreader = foreign "clipper_svgreader" (ptr void @-> returning (ptr SvgReader.t))
+
+  (** {2 accessors} *)
+
+  let svgreader_get_pathsd =
+    foreign
+      "clipper_svgreader_get_pathsd"
+      (ptr void @-> ptr SvgReader.t @-> returning (ptr PathsD.t))
+
+  (** {2 methods} *)
+
+  let svgreader_load_from_file =
+    foreign
+      "clipper_svgreader_load_from_file"
+      (ptr SvgReader.t @-> ptr char @-> returning void)
+
+  let svgreader_clear =
+    foreign "clipper_svgreader_clear" (ptr SvgReader.t @-> returning void)
+
+  (** {1 memory size} *)
 
   let path64_size = foreign "clipper_path64_size" (void @-> returning size_t)
   let pathd_size = foreign "clipper_pathd_size" (void @-> returning size_t)
@@ -916,8 +1139,10 @@ module Functions (F : Ctypes.FOREIGN) = struct
   let clipper64_size = foreign "clipper_clipper64_size" (void @-> returning size_t)
   let clipperd_size = foreign "clipper_clipperd_size" (void @-> returning size_t)
   let offset_size = foreign "clipper_clipperoffset_size" (void @-> returning size_t)
+  let svgwriter_size = foreign "clipper_svgwriter_size" (void @-> returning size_t)
+  let svgreader_size = foreign "clipper_svgreader_size" (void @-> returning size_t)
 
-  (* destruction *)
+  (** {1 destruction} *)
 
   let destruct_path64 = foreign "clipper_destruct_path64" (ptr Path64.t @-> returning void)
   let destruct_pathd = foreign "clipper_destruct_pathd" (ptr PathD.t @-> returning void)
@@ -944,7 +1169,13 @@ module Functions (F : Ctypes.FOREIGN) = struct
   let destruct_offset =
     foreign "clipper_destruct_clipperoffset" (ptr Offset.t @-> returning void)
 
-  (* pointer free + destruction *)
+  let destruct_svgwriter =
+    foreign "clipper_destruct_svgwriter" (ptr SvgWriter.t @-> returning void)
+
+  let destruct_svgreader =
+    foreign "clipper_destruct_svgreader" (ptr SvgReader.t @-> returning void)
+
+  (** {1 pointer free + destruction} *)
 
   let delete_path64 = foreign "clipper_delete_path64" (ptr Path64.t @-> returning void)
   let delete_pathd = foreign "clipper_delete_pathd" (ptr PathD.t @-> returning void)
@@ -967,4 +1198,10 @@ module Functions (F : Ctypes.FOREIGN) = struct
 
   let delete_clipperoffset =
     foreign "clipper_delete_clipperoffset" (ptr Offset.t @-> returning void)
+
+  let delete_svgwriter =
+    foreign "clipper_delete_svgwriter" (ptr SvgWriter.t @-> returning void)
+
+  let delete_svgreader =
+    foreign "clipper_delete_svgreader" (ptr SvgReader.t @-> returning void)
 end

@@ -20,6 +20,18 @@ module Types (F : Cstubs.Types.TYPE) = struct
     let t : t typ = structure "ClipperClipperOffset"
   end
 
+  module SvgWriter = struct
+    type t = [ `SvgWriter ] structure
+
+    let t : t typ = structure "ClipperSvgWriter"
+  end
+
+  module SvgReader = struct
+    type t = [ `SvgReader ] structure
+
+    let t : t typ = structure "ClipperSvgReader"
+  end
+
   module Path64 = struct
     type t = [ `Path64 ] structure
 

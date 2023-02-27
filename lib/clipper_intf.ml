@@ -19,6 +19,24 @@ module type V = sig
   val y : t -> n
 end
 
+module type Contour = sig
+  (** Signature of a contour type -- an open or closed path/sequence of points.
+       To be used for construction and destruction of the Clipper2 path type. *)
+
+  (** 2d vector type representing points -- will be destructed (type declaration
+       not required in user supplied module) *)
+  type v
+
+  (** contour type *)
+  type t
+
+  (** [to_seq t] converts the contour [t] to an iterator of points *)
+  val to_seq : t -> v Seq.t
+
+  (** [of_seq vs] creates a contour from an iterator points [vs] *)
+  val of_seq : v Seq.t -> t
+end
+
 module type Poly = sig
   (** Signature of a polygon type -- an outer path and zero or more inner paths
     (holes). To be used for construction and destruction of Clipper2 paths
@@ -31,11 +49,11 @@ module type Poly = sig
   (** polygon type *)
   type t
 
-  (** [to_list t] converts the polygon [t] to a list of lists of points *)
-  val to_list : t -> v list list
+  (** [to_seq t] converts the polygon [t] to an iterator of iterators of points *)
+  val to_seq : t -> v Seq.t Seq.t
 
-  (** [of_list vs] creates a polygon from the list of lists of points [vs] *)
-  val of_list : v list list -> t
+  (** [of_seq vs] creates a polygon from the iterator of iterators of points [vs] *)
+  val of_seq : v Seq.t Seq.t -> t
 end
 
 module ConfigTypes = struct
@@ -77,13 +95,13 @@ module ConfigTypes = struct
     | `Round
       (** rounding is appliedto all joins that have convex external
              angles, and it maintains the exact offset distance from the join vertex *)
-    | `Miter of float option
+    | `Miter
       (** there's a necessary limit to mitered joins (to avoid narrow angled
               joins producing excessively long and narrow
               {{:http://www.angusj.com/clipper2/Docs/Units/Clipper.Offset/Classes/ClipperOffset/Properties/MiterLimit.htm}
-              spikes})). The optional limit sets the maximum distance in multiples of
+              spikes})). The limit sets the maximum distance in multiples of
               the [delta] specified for the offsetting operation (default is
-              [2], which is the minimum allowed). *)
+              [2.], which is the minimum allowed). *)
     ]
 
   (** Sets whether paths are treated as closed ([`Polygon]) when offsetting or
@@ -128,19 +146,36 @@ module type S = sig
   (** 2d vector type representing points *)
   type v
 
+  (** contour -- path/sequence of points *)
+  type contour
+
   (** polygon type -- outer path and zero or more inner paths (holes) *)
   type poly
 
-  (** The Clipper2 Path type (std::vector of point) *)
-  type path
-
-  (** The Clipper2 Paths type (std::vector of path) *)
-  type paths
-
   include module type of ConfigTypes
 
+  (** Clipper2 paths and polygons
+
+      This GADT abstracts over the Clipper2 Path and Paths types in order to
+      avoid splitting the interface into two largely duplicated modules. The
+      ['ctr] parameter specifies the corresponding OCaml type from which it can
+      be constructed from, or destructed to. *)
+  type ('cpp, 'ctr) t
+
+  (** The Clipper2 path type (std::vector of point) *)
+  type path = ([ `Path ], contour) t
+
+  (** The Clipper2 paths type (std::vector of path)
+
+       These lists of contours are not organized hierarchically (by
+       parent-child / outer-hole) relationships, and may include any number
+       of open paths or polygons. *)
+  type paths = ([ `Paths ], contour list) t
+
   module Rect : sig
-    (** an axis-aligned rectangle (Clipper2 class) *)
+    (** An axis-aligned rectangle used bounding box computations and quick
+          rectangular clipping (boolean intersection) operations. (see {!val:rect_clip}) *)
+
     type t
 
     (** {1 Construction / Conversion} *)
@@ -207,140 +242,217 @@ module type S = sig
     val is_empty : t -> bool
   end
 
-  module Path : sig
-    (** The Clipper2 path type (std::vector of point) *)
+  (** {1 Construction / Conversion} *)
 
-    type t = path
-
-    (** {1 Construction / Conversion} *)
-
-    (** [of_list ps]
+  (** [path ps]
 
        Create a path from the list of 2d points [ps]. *)
-    val of_list : v list -> t
+  val path : contour -> path
 
-    (** [to_list t]
+  (** [paths ps]
 
-       Convert the path [t] to a list of 2d points. *)
-    val to_list : t -> v list
+       Create paths from the list of lists of 2d points [ps]. *)
+  val paths : contour list -> paths
 
-    (** [ellipse ?fn ?centre rs]
+  (** [contour t]
+
+       Convert the path (or paths) [t] to contour(s) of 2d points. *)
+  val contour : (_, 'contour) t -> 'contour
+
+  (** [of_poly p]
+
+       Create a paths from a polygon [p]. *)
+  val of_poly : poly -> paths
+
+  (** [of_polys ps]
+
+       Create a paths from a list of polygons [ps]. *)
+  val of_polys : poly list -> paths
+
+  (** [to_poly t]
+
+       Create a polygon with the outline [t]. *)
+  val to_poly : path -> poly
+
+  (** [to_polys ?fill_rule t]
+
+          Extract a list of non-overlapping polygons from the set of paths [t].
+          This involves a clipper union operation tracking the parent-child
+          (outline-hole) relationships of the paths, thus [fill_rule] can be
+          provided to override the default rule if desired. *)
+  val to_polys : ?fill_rule:fill_rule -> ('cpp, 'ctr) t -> poly list
+
+  (** [ellipse ?fn ?centre rs]
 
         Draw an elliptical path with with the specified xy radii [rs] centred
         on the origin, or at the point [centre] if provided. The number
         of segments can be set explicitly with [fn], otherwise the quality is
         calculated based on the dimensions. *)
-    val ellipse : ?fn:int -> ?centre:v -> v -> t
+  val ellipse : ?fn:int -> ?centre:v -> v -> path
 
-    (** {1 Access} *)
+  (** {1 Access} *)
 
-    (** [length t]
+  (** [n_pts t]
 
-       Return the number of points in the path [t]. *)
-    val length : t -> int
+       Return the number of points in the path(s) [t]. *)
+  val n_pts : ('cpp, 'ctr) t -> int
 
-    (** [get_point t i]
+  (** [n_pts_sub t i]
+
+      Return the number of points in the [i]th sub-path of [t]. *)
+  val n_pts_sub : paths -> int -> int
+
+  (** [n_paths t]
+
+       Return the number of paths in [t]. *)
+  val n_paths : ('cpp, 'ctr) t -> int
+
+  (** [subpath t i]
+
+       Get the [i]th subpath from the paths [t]. *)
+  val subpath : paths -> int -> path
+
+  (** [path_pt t i]
 
        Get the point at index [i] from the path [t]. *)
-    val get_point : t -> int -> v
+  val path_pt : path -> int -> v
 
-    (** {1 Boolean Operations} *)
+  (** [paths_pt t i]
 
-    (** [boolean_op ?fill_rule ~op a b]
+       Get the point at index [j] from the path at index [i] of [t]. *)
+  val paths_pt : paths -> int -> int -> v
 
-          Perform the boolean operation [op] with the specified [fill_rule]
-          on the polygons (closed paths) [a] and [b]. *)
-    val boolean_op : ?fill_rule:fill_rule -> op:clip_type -> t -> t -> paths
+  (** [path.%(i)] gets the point at index [i] from [path]. *)
+  val ( .%() ) : path -> int -> v
 
-    (** [intersect ?fill_rule a b]
+  (** [paths.%(i, j)] gets the point at index [j] from the [i]th path in [paths]. *)
+  val ( .%{} ) : paths -> int * int -> v
 
-          Intersect the polygons [a] and [b] according to [fill_rule]. The
-          result includes regions covered by both polygons. *)
-    val intersect : ?fill_rule:fill_rule -> t -> t -> paths
+  (** {1 Boolean Operations} *)
 
-    (** [union ?fill_rule subjects]
+  (** [boolean_op ?fill_rule ~op subjects clips]
+
+       Perform the boolean operation [op] with the specified [fill_rule]
+       on the polygons (closed paths) [subjects] and list of clipping
+       polygons [clips]. *)
+  val boolean_op
+    :  ?fill_rule:fill_rule
+    -> op:clip_type
+    -> ('cpp, 'ctr) t
+    -> ('cpp, 'ctr) t list
+    -> paths
+
+  (** [intersect ?fill_rule ts]
+
+          Intersect the list of polygons [ts] according to [fill_rule]. The
+          result includes regions covered by all polygons. *)
+  val intersect : ?fill_rule:fill_rule -> ('cpp, 'ctr) t list -> paths
+
+  (** [union ?fill_rule subjects]
 
           Union the polygons [subjects] according to [fill_rule]. The result
           includes the regions covered by any of the polygons contained in
           [subjects]. *)
-    val union : ?fill_rule:fill_rule -> t list -> paths
+  val union : ?fill_rule:fill_rule -> ('cpp, 'ctr) t list -> paths
 
-    (** [add ?fill_rule a b]
+  (** [add ?fill_rule a b]
 
           {!union} the polygon [a] and [b]. *)
-    val add : ?fill_rule:fill_rule -> t -> t -> paths
+  val add : ?fill_rule:fill_rule -> ('cpp, 'ctr) t -> ('cpp, 'ctr) t -> paths
 
-    (** [difference ?fill_rule a b]
+  (** [difference ?fill_rule subjects clips]
 
-          Difference the polygon [b] from the polygon [a] according to
-          [fill_rule]. The result includes the regions covered by the polygon [a],
-          but not the polygon [b]. *)
-    val difference : ?fill_rule:fill_rule -> t -> t -> paths
+          Difference the polygons [clips] from the polygon [subjects] according to
+          [fill_rule]. The result includes the regions covered by the polygon [subjects],
+          but not [clips]. *)
+  val difference : ?fill_rule:fill_rule -> ('cpp, 'ctr) t -> ('cpp, 'ctr) t list -> paths
 
-    (** [sub a b]
+  (** [sub a b]
 
            Difference the polygon [b] from [a] (alias to {!difference}). *)
-    val sub : ?fill_rule:fill_rule -> t -> t -> paths
+  val sub : ?fill_rule:fill_rule -> ('cpp, 'ctr) t -> ('cpp, 'ctr) t -> paths
 
-    (** [xor ?fill_rule subjects clips]
+  (** [xor ?fill_rule ts]
 
-          Perform the exclusive-or boolean operation between the closed paths
+          Perform the exclusive-or boolean operation between the closed ps
           [a] and [b] according to [fill_rule]. The result includes
           regions covered by the either [a] or [b], but not both. *)
-    val xor : ?fill_rule:fill_rule -> t -> t -> paths
+  val xor : ?fill_rule:fill_rule -> ('cpp, 'ctr) t list -> paths
 
-    (** [rect_clip ?closed r t]
+  (** [rect_clip ?closed r t]
 
           Intersect the path [t] with the axis-aligned rectangle [r]. The path is
           treated as closed/polygonal by default, but an open path may be clipped
           by setting [~closed:false]. *)
-    val rect_clip : ?closed:bool -> Rect.t -> t -> paths
+  val rect_clip : ?closed:bool -> Rect.t -> ('cpp, 'ctr) t -> paths
 
-    (** {1 Offsetting} *)
+  (** {1 Offsetting} *)
 
-    (** [inflate ?join_type ?end_type ~delta t]
+  (** [inflate ?miter_limit ?join_type ?end_type ~delta t]
 
-          Offset the polygon (or open path) [t] by [delta]. If [t] is a closed
-          polygonal path, it's important that [end_type] is [`Polygon] (default
-          if not overridden by user's [Config]). If instead you select one of the open
-          path end types (e.g. [`Joined]), the polygon's {i outline} will be inflated
-          ({{:https://github.com/AngusJohnson/Clipper2/discussions/154#discussion-4284428}
-          example}).
+       Offset the polygon (or open path) [t] by [delta]. If [t] is a closed
+       polygonal path, it's important that [end_type] is [`Polygon] (default
+       if not overridden by user's [Config]). If instead you select one of the open
+       path end types (e.g. [`Joined]), the polygon's {i outline} will be inflated
+       ({{:https://github.com/AngusJohnson/Clipper2/discussions/154#discussion-4284428}
+       example}).
 
-          - with closed paths (polygons), a positive delta specifies how much outer
-            polygon contours will expand and how much inner "hole" contours will contract (and
-            the converse with negative deltas).
-          - with open paths (polylines), including EndType.Join, delta specifies the width
-            of the inflated line.
-          - {b Caution:} offsetting self-intersecting polygons may produce
-            unexpected results. *)
-    val inflate : ?join_type:join_type -> ?end_type:end_type -> delta:float -> t -> paths
+      - The [miter_limit] sets the maximum distance in multiples of [delta]
+        that vertices can be offset from their original positions with
+        {!join_type} [`Miter] before squaring is applied (default is [2.], which is
+        the minimum allowed -- [Invalid_argument] is raised otherwise). See the
+        {{:http://www.angusj.com/clipper2/Docs/Units/Clipper.Offset/Classes/ClipperOffset/Properties/MiterLimit.htm}
+        Clipper2 MiterLimit}) page for a visual example.
+       - with closed paths (polygons), a positive delta specifies how much outer
+         polygon contours will expand and how much inner "hole" contours will contract (and
+         the converse with negative deltas).
+       - with open paths (polylines), including [`Joined], delta specifies the width
+         of the inflated line.
+       - {b Caution:} offsetting self-intersecting polygons may produce
+         unexpected results. *)
+  val inflate
+    :  ?miter_limit:float
+    -> ?join_type:join_type
+    -> ?end_type:end_type
+    -> delta:float
+    -> ('cpp, 'ctr) t
+    -> paths
 
-    (** {1 Minkowski} *)
+  (** {1 Minkowski} *)
 
-    (** [minkowski_sum ?closed ~pattern t]
+  (** [minkowski_sum ?closed ~pattern t]
 
-        Apply {{:https://en.wikipedia.org/wiki/Minkowski_addition} Minkowski
-        addition} of the path [pattern] to the path [t]. [t] is treated
-        as a [closed] polygon unless otherwise specified. *)
-    val minkowski_sum : ?closed:bool -> pattern:t -> t -> t
+      Apply {{:https://en.wikipedia.org/wiki/Minkowski_addition} Minkowski addition}
+      of the path [pattern] to the path(s) [t]. [t] is treated as a [closed]
+      polygon(s) unless otherwise specified. *)
+  val minkowski_sum
+    :  ?closed:bool
+    -> ?fill_rule:fill_rule
+    -> pattern:path
+    -> ('cpp, 'ctr) t
+    -> paths
 
-    (** [minkowski_diff ?closed ~pattern t]
+  (** [minkowski_diff ?closed ~pattern t]
 
-        Apply {{:https://en.wikipedia.org/wiki/Minkowski_addition} Minkowski
-        subtraction} of the path [pattern] from the path [t]. [t] is treated
-        as a [closed] polygon unless otherwise specified. *)
-    val minkowski_diff : ?closed:bool -> pattern:t -> t -> t
+        Apply {{:https://en.wikipedia.org/wiki/Minkowski_addition} Minkowski subtraction}
+        of the path [pattern] from the path(s) [t]. [t] is treated as a [closed]
+        polygon(s) unless otherwise specified. *)
+  val minkowski_diff
+    :  ?closed:bool
+    -> ?fill_rule:fill_rule
+    -> pattern:path
+    -> ('cpp, 'ctr) t
+    -> paths
 
-    (** {1 Path Simplification} *)
+  (** {1 Path Simplification} *)
 
-    (** [simplify ?closed ?eps t]
+  (** [simplify ?closed ?eps t]
 
        Remove extraneous vertices from the path [t] (similar to
        {!ramer_douglas_peucker}). *)
-    val simplify : ?closed:bool -> ?eps:float -> t -> t
+  val simplify : ?closed:bool -> ?eps:float -> ('cpp, 'ctr) t -> ('cpp, 'ctr) t
 
-    (** [ramer_douglas_peucker ?eps t]
+  (** [ramer_douglas_peucker ?eps t]
 
        Applies the
        {{:https://en.wikipedia.org/wiki/Ramer%E2%80%93Douglas%E2%80%93Peucker_algorithm}
@@ -356,254 +468,189 @@ module type S = sig
        degrade the quality of subsequent offsets. And they'll also degrade
        performance. Because of this, it is strongly recommended calling this function
        after every polygon offset. *)
-    val ramer_douglas_peucker : ?eps:float -> t -> t
+  val ramer_douglas_peucker : ?eps:float -> ('cpp, 'ctr) t -> ('cpp, 'ctr) t
 
-    (** [trim_collinear ?closed t]
+  (** [trim_collinear ?closed t]
 
           Remove collinear points (that fall on a line drawn between their
           neighbours) from the path [t]. The path is treated as [closed] by
           default. *)
-    val trim_collinear : ?closed:bool -> t -> t
+  val trim_collinear : ?closed:bool -> ('cpp, 'ctr) t -> ('cpp, 'ctr) t
 
-    (** [strip_near_equal ?closed ?eps t]
+  (** [strip_near_equal ?closed ?eps t]
 
        Remove adjacent points that are less than [eps] distance apart from
        their neighbour from the paths [t]. The path is treated as [closed] by
        default. *)
-    val strip_near_equal : ?closed:bool -> ?eps:float -> t -> t
+  val strip_near_equal : ?closed:bool -> ?eps:float -> ('cpp, 'ctr) t -> ('cpp, 'ctr) t
 
-    (** [strip_duplicates ?closed ?eps t]
+  (** [strip_duplicates ?closed ?eps t]
 
        Remove adjacent points that duplicate of their neighbours from the
        paths [t]. The path is treated as [closed] by default. *)
-    val strip_duplicates : ?closed:bool -> t -> t
+  val strip_duplicates : ?closed:bool -> ('cpp, 'ctr) t -> ('cpp, 'ctr) t
 
-    (** {1 Transformation} *)
+  (** {1 Transformation} *)
 
-    (** [translate v t]
+  (** [translate v t]
 
        Translate the path [t] along the vector [v]. *)
-    val translate : v -> t -> t
+  val translate : v -> ('cpp, 'ctr) t -> ('cpp, 'ctr) t
 
-    (** {1 Geometry} *)
+  (** [map f t]
 
-    (** [area t]
+      Map over the points in [t] with the function [f]. *)
+  val map : (v -> v) -> ('cpp, 'ctr) t -> ('cpp, 'ctr) t
+
+  (** {1 Geometry} *)
+
+  (** [area t]
 
        Compute the signed area of the path [t]. *)
-    val area : t -> float
+  val area : ('cpp, 'ctr) t -> float
 
-    (** [bounds t]
+  (** [bounds t]
 
           Compute the axis-aligned bounding box that contains the path [t]. *)
-    val bounds : t -> Rect.t
+  val bounds : ('cpp, 'ctr) t -> Rect.t
 
-    (** [is_positive t]
+  (** [is_positive t]
 
        Check if the orientation/winding of the path [t] is positive. *)
-    val is_positive : t -> bool
+  val is_positive : path -> bool
 
-    (** [point_inside t p]
+  (** [point_inside t p]
 
        Determine whether the point [p] is inside, outside, or on the border of
        [t]. *)
-    val point_inside : t -> v -> [> `Inside | `OnBorder | `Outside ]
-  end
+  val point_inside : path -> v -> [> `Inside | `OnBorder | `Outside ]
 
-  module Paths : sig
-    (** The Clipper2 paths type (std::vector of path)
+  module Svg : sig
+    (** {1 Configuration Types} *)
 
-          These lists of contours are not organized hierarchically (by
-          parent-child / outer-hole) relationships, and may include any number
-          of open paths or polygons. *)
+    (** Describing colours with which to paint paths and draw text. *)
+    module Color : sig
+      (** Basic colours options, along with [Hex 0xFFFFFF] and [RGB (r, g, b)]
+             constructors for arbitrary colour specification *)
+      type color =
+        | Black
+        | White
+        | Blue
+        | Gray
+        | Green
+        | Purple
+        | Red
+        | Lime
+        | Yellow
+        | Cyan
+        | Magenta
+        | Silver
+        | Teal
+        | Navy
+        | Hex of int (** 6-digit hex code (lacking alpha) *)
+        | RGB of int * int * int
 
-    type t = paths
+      (** A colour with transparency (alpha) value. *)
+      type t
 
-    (** {1 Construction / Conversion} *)
+      (** [make ?alpha c]
 
-    (** [of_list ps]
+             Create a colour with the transparency [alpha] (default [= 0.8]). *)
+      val make : ?alpha:float -> color -> t
+    end
 
-       Create a path from the list of lists of 2d points [ps]. *)
-    val of_list : v list list -> t
+    (** [color ?alpha c]
 
-    (** [to_list t]
+          Create a colour with the transparency [alpha] (default [= 0.8]).
+          Alias to {!Color.make}. *)
+    val color : ?alpha:float -> Color.color -> Color.t
 
-       Convert the paths [t] to a list of lists of 2d points. *)
-    val to_list : t -> v list list
+    (** coordinate label styling (font, color, and size) *)
+    type coords
 
-    (** [of_poly p]
+    (** [coords ?font ?size ?color ()]
 
-          Create a paths from a polygon [p]. *)
-    val of_poly : poly -> t
+          Create a coordinate display style to be given to {!write}, which will
+          apply to any {!paint} artists with [show_coords=true]. Defaulting
+          to 11pt Verdana in solid black. *)
+    val coords : ?font:string -> ?size:int -> ?color:Color.t -> unit -> coords
 
-    (** [of_polys ps]
+    (** {1 Artists}
 
-          Create a paths from a list of polygons [ps]. *)
-    val of_polys : poly list -> t
+        Declarative construction of artists to be applied to an svg in the
+        order that they are supplied to {!write}. *)
 
-    (** [to_polys ?fill_rule t]
+    (** An element to be written to svg (text, paths, or filled polygons) *)
+    type artist
 
-          Extract a list of non-overlapping polygons from the set of paths [t].
-          This involves a clipper union operation tracking the parent-child
-          (outline-hole) relationships of the paths, thus [fill_rule] can be
-          provided to override the default rule if desired. *)
-    val to_polys : ?fill_rule:fill_rule -> t -> poly list
+    (** {2 Drawing Text} *)
 
-    (** {1 Access} *)
+    (** [text ?size ?color v s]
 
-    (** [length t]
+          Draw the text [s] with the given [color] (default [Black]) and [size]
+          (default [11]) at the position [v]. *)
+    val text : ?size:int -> ?color:Color.t -> v -> string -> artist
 
-       Return the number of paths in the list of paths [t]. *)
-    val length : t -> int
+    (** {2 Painting Paths} *)
 
-    (** [path_length t i]
+    (** [paint ?closed ?fill_rule ?show_coords ?width ?brush ?pen path]
 
-       Return the number of points in the path at index [i] of [t]. *)
-    val path_length : t -> int -> int
+         Draw a [path] or filled polygon (depending on [closed], which defaults to
+         [true], and [fill_rule] (defaults to [`NonZero])). [width] and [pen]
+         set the thickness and color of the outline respectively, while [brush]
+         governs the filling color. Point coordinates will be drawn if a
+         [show_coords] is provided, otherwise they will be left off. *)
+    val paint
+      :  ?closed:bool
+      -> ?fill_rule:fill_rule
+      -> ?show_coords:bool
+      -> ?width:float
+      -> ?brush:Color.t
+      -> ?pen:Color.t
+      -> ('cpp, 'ctr) t
+      -> artist
 
-    (** [get_path t i]
+    (** {3 Debug Helpers} *)
 
-       Get the path at index [i] from [t]. *)
-    val get_path : t -> int -> path
+    (** [subject ?closed ?fill_rule path]
 
-    (** [get_point t i j]
+          {!paint} subject path(s) with default Clipper2 pen and brush settings. *)
+    val subject : ?closed:bool -> ?fill_rule:fill_rule -> ('cpp, 'ctr) t -> artist
 
-       Get the point [j] from the path at index [i] in [t]. *)
-    val get_point : t -> int -> int -> v
+    (** [clip ?fill_rule path]
 
-    (** {1 Boolean Operations} *)
+          {!paint} clipping path(s) with default Clipper2 pen and brush settings. *)
+    val clip : ?fill_rule:fill_rule -> ('cpp, 'ctr) t -> artist
 
-    (** [boolean_op ?fill_rule ~op subjects clips]
+    (** [solution ?closed ?fill_rule ?show_coords path]
 
-          Perform the boolean operation [op] with the specified [fill_rule]
-          on the paths/polygons [subjects] with [clips] (all paths are treated as
-          closed). With the exception of [`Union], operations are performed {i
-          between} [subjects] and [clips], not {i within} [subjects] ({i e.g.}
-          paths in [subjects] are not differenced from eachother). *)
-    val boolean_op : ?fill_rule:fill_rule -> op:clip_type -> t -> t -> t
+          {!paint} solution path(s) with default Clipper2 pen and brush settings. *)
+    val solution
+      :  ?closed:bool
+      -> ?fill_rule:fill_rule
+      -> ?show_coords:bool
+      -> ('cpp, 'ctr) t
+      -> artist
 
-    (** [intersect ?fill_rule subjects clips]
+    (** {1 IO} *)
 
-          Intersect the polygons in [subjects] with the polygons in [clips]
-          according to [fill_rule]. The result includes regions covered by both
-          polygons in [subjects] and [clips]. *)
-    val intersect : ?fill_rule:fill_rule -> t -> t -> t
+    (** [write path artists]
 
-    (** [union ?fill_rule subjects]
+          Write the list of [artists] (see {!text} and {!paint}) in sequence to
+          an svg file at [path]. *)
+    val write
+      :  ?max_width:int
+      -> ?max_height:int
+      -> ?margin:int
+      -> ?coords:coords
+      -> string
+      -> artist list
+      -> (unit, string) result
 
-          Union the polygons [subjects] according to [fill_rule]. The result
-          includes the regions covered by any of the polygons contained in
-          [subjects]. *)
-    val union : ?fill_rule:fill_rule -> t -> t
+    (** [read filename]
 
-    (** [add ?fill_rule a b]
-
-          {!union} all of the polygons in [a] and [b]. *)
-    val add : ?fill_rule:fill_rule -> t -> t -> t
-
-    (** [difference ?fill_rule subjects clips]
-
-          Difference the polygons in [clips] from [subjects] according to
-          [fill_rule]. The result includes the regions covered by the [subjects],
-          but not the [clips] polygons. *)
-    val difference : ?fill_rule:fill_rule -> t -> t -> t
-
-    (** [sub a b]
-
-           Difference the polygons in [b] from [a] (alias to {!difference}). *)
-    val sub : ?fill_rule:fill_rule -> t -> t -> t
-
-    (** [xor ?fill_rule subjects clips]
-
-          Perform the exclusive-or boolean operation between the closed paths
-          [subjects] and [clips] according to [fill_rule]. The result includes
-          regions covered by the [subjects] or [clips] polygons, but not both. *)
-    val xor : ?fill_rule:fill_rule -> t -> t -> t
-
-    (** [rect_clip ?closed r t]
-
-          Intersect the paths [t] with the axis-aligned rectangle [r]. Paths are
-          treated as closed/polygonal by default, but open paths may be clipped
-          by setting [~closed:false]. *)
-    val rect_clip : ?closed:bool -> Rect.t -> t -> t
-
-    (** {1 Offsetting} *)
-
-    (** [inflate ?join_type ?end_type ~delta t]
-
-          Offset the polygons (and/or open paths) in [t] by [delta]. If you
-          intend to inflate polygons (closed paths), it's important that [end_type] is
-          [`Polygon] (default if not overridden by user's [Config]). If instead you
-          select one of the open path end types (e.g. [`Joined]), the polygon's {i
-          outline} will be inflated
-          ({{:https://github.com/AngusJohnson/Clipper2/discussions/154#discussion-4284428}
-          example}).
-
-          - with closed paths (polygons), a positive delta specifies how much outer
-            polygon contours will expand and how much inner "hole" contours will contract (and
-            the converse with negative deltas).
-          - with open paths (polylines), including EndType.Join, delta specifies the width
-            of the inflated line.
-          - {b Caution:} offsetting self-intersecting polygons may produce
-            unexpected results. *)
-    val inflate : ?join_type:join_type -> ?end_type:end_type -> delta:float -> t -> t
-
-    (** {1 Path Simplification} *)
-
-    (** [simplify ?closed ?eps t]
-
-       Remove extraneous vertices from the paths [t] (similar to
-       {!ramer_douglas_peucker}). *)
-    val simplify : ?closed:bool -> ?eps:float -> t -> t
-
-    (** [ramer_douglas_peucker ?eps t]
-
-       Applies the
-       {{:https://en.wikipedia.org/wiki/Ramer%E2%80%93Douglas%E2%80%93Peucker_algorithm}
-       Ramer-Douglas-Peucker algorithm} to remove extraneous vertices from the
-       paths [t]. Put simply, vertices will be removed if they are less than
-       [eps] distance from imaginary lines passing through their adjacent vertices.
-
-       This function is particularly useful following offsetting (ie
-       inflating/shrinking paths). Offsetting often creates tiny segments that don't
-       improve path quality. Further these tiny segments create angles that are
-       strongly influenced by integer rounding. While these tiny segments are too
-       small to be noticeable following a single offset procedure, they're likely to
-       degrade the quality of subsequent offsets. And they'll also degrade
-       performance. Because of this, it is strongly recommended calling this function
-       after every polygon offset. *)
-    val ramer_douglas_peucker : ?eps:float -> t -> t
-
-    (** [strip_near_equal ?closed ?eps t]
-
-       Remove adjacent points that are less than [eps] distance apart from
-       their neighbour from the paths [t]. The path is treated as [closed] by
-       default. *)
-    val strip_near_equal : ?closed:bool -> ?eps:float -> t -> t
-
-    (** [strip_duplicates ?closed ?eps t]
-
-       Remove adjacent points that duplicate of their neighbours from the
-       paths [t]. The path is treated as [closed] by default. *)
-    val strip_duplicates : ?closed:bool -> t -> t
-
-    (** {1 Transformations} *)
-
-    (** [translate v t]
-
-       Translate the paths [t] along the vector [v]. *)
-    val translate : v -> t -> t
-
-    (** {1 Geometry} *)
-
-    (** [bounds t]
-
-          Compute the axis-aligned bounding box that contains the paths [t]. *)
-    val bounds : t -> Rect.t
-
-    (** [area t]
-
-       Compute the summed signed area of all paths in [t]. *)
-    val area : t -> float
+          Read paths from from the svg file at the given path. *)
+    val read : string -> paths
   end
 end
 
@@ -662,33 +709,56 @@ module type Intf = sig
 
   (** {1 Functors} *)
 
-  (** [MakeD' (V) (P) (C)] creates a Clipper2 module with the 2d [float] vector
-       [V], the polygon type [P] (composed of [V.t]s, used for input/output), and a
-       user configuration (see {!config} for convenience constructor). *)
+  (** [MakeD' (V) (Ctr) (P) (Conf)] creates a Clipper2 module with the 2d [float] vector
+       [V], the contour [Ctr] and polygon [P] types (composed of [V.t]s, used
+       for input/output), and a user configuration (see {!config} for convenience
+       constructor). *)
   module MakeD' : functor
     (V : V with type n := float)
+    (Ctr : Contour with type v := V.t)
     (P : Poly with type v := V.t)
     (_ : Config)
-    -> S with type n := float and type v := V.t and type poly := P.t
+    ->
+    S
+      with type n := float
+       and type v := V.t
+       and type contour := Ctr.t
+       and type poly := P.t
 
   (** [MakeD (V) (C)] creates a Clipper2 module with the 2d [float] vector [V], and a user
        configuration (see {!config} for convenience constructor). Same as
-       {!MakeD'}, but the polygon type is preset to [V.t list list]. *)
+       {!MakeD'}, but the contour and polygon types is preset to use [list]. *)
   module MakeD : functor (V : V with type n := float) (_ : Config) ->
-    S with type n := float and type v := V.t and type poly := V.t list list
+    S
+      with type n := float
+       and type v := V.t
+       and type contour := V.t list
+       and type poly := V.t list list
 
-  (** [MakeD' (V) (P) (C)] creates a Clipper2 module with the 2d [int64] vector
-       [V], the polygon type [P] (composed of [V.t]s, used for input/output), and a
-       user configuration (see {!config} for convenience constructor). *)
+  (** [MakeD' (V) (Ctr) (P) (Conf)] creates a Clipper2 module with the 2d [int64] vector
+       [V], the contour [Ctr] and polygon [P] types (composed of [V.t]s, used
+       for input/output), and a user configuration (see {!config} for
+       convenience constructor). *)
   module Make64' : functor
     (V : V with type n := int64)
+    (Ctr : Contour with type v := V.t)
     (P : Poly with type v := V.t)
     (_ : Config)
-    -> S with type n := int64 and type v := V.t and type poly := P.t
+    ->
+    S
+      with type n := int64
+       and type v := V.t
+       and type contour := Ctr.t
+       and type poly := P.t
 
-  (** [MakeD (V) (C)] creates a Clipper2 module with the 2d [int64] vector [V], and a user
-       configuration (see {!config} for convenience constructor). Same as
-       {!MakeD'}, but the polygon type is preset to [V.t list list]. *)
+  (** [MakeD (V) (Conf)] creates a Clipper2 module with the 2d [int64]
+       vector [V], and a user configuration (see {!config} for convenience
+       constructor). Same as {!MakeD'}, but the contour and polygon type is preset
+       to use [list]. *)
   module Make64 : functor (V : V with type n := int64) (_ : Config) ->
-    S with type n := int64 and type v := V.t and type poly := V.t list list
+    S
+      with type n := int64
+       and type v := V.t
+       and type contour := V.t list
+       and type poly := V.t list list
 end

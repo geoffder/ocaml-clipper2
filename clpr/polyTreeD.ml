@@ -35,7 +35,7 @@ let is_hole t = C.Funcs.polytreed_is_hole t
 let area t = C.Funcs.polytreed_area t
 
 let polygon t =
-  let buf, path = PathD.alloc () in
+  let buf, path = PathD_0.alloc () in
   let _ = C.Funcs.polytreed_polygon buf t in
   path
 
@@ -50,21 +50,21 @@ let polygon t =
    This function converts the above described tree structure into a list of
    complex polygons (outlines with holes). *)
 let decompose to_vs t =
-  let polys = ref [] in
+  let polys = ref Seq.empty in
   let rec outer i t =
     let n_outlines = count t in
     if i < n_outlines
     then (
       let outline = child t i in
-      let holes = inner outline (count outline) 0 [] in
-      polys := (to_vs (polygon outline) :: holes) :: !polys;
+      let holes = inner outline (count outline) 0 Seq.empty in
+      polys := Seq.cons (Seq.cons (to_vs (polygon outline)) holes) !polys;
       if i < n_outlines - 1 then outer (i + 1) t else () )
   and inner outline n_holes j holes =
     if j < n_holes
     then (
       let c = child outline j in
       outer 0 c;
-      inner outline n_holes (j + 1) (to_vs (polygon c) :: holes) )
+      inner outline n_holes (j + 1) (Seq.cons (to_vs (polygon c)) holes) )
     else holes
   in
   outer 0 t;

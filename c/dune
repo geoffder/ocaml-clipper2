@@ -1,5 +1,5 @@
 (library
- (name clipper_c)
+ (name c)
  (public_name clipper.c)
  (wrapped true)
  (libraries ctypes ctypes.foreign)
@@ -23,14 +23,17 @@
    (concurrency sequential)
    (instance Funcs)
    (functor Clipper_c_function_descriptions))
-  (generated_types Clipper_c_types)
-  (generated_entry_point C))
- (foreign_archives clipper2c Clipper2))
+  (generated_types Types)
+  (generated_entry_point C_))
+ (foreign_archives clipper2c Clipper2 Clipper2svg))
 
 ; Build Clipper2c vendor
 
 (rule
- (targets dllclipper2c%{ext_dll} dllClipper2%{ext_dll})
+ (targets
+  dllclipper2c%{ext_dll}
+  dllClipper2%{ext_dll}
+  dllClipper2svg%{ext_dll})
  (deps
   (source_tree vendor/Clipper2c))
  (action
@@ -47,11 +50,14 @@
      vendor/Clipper2c/build_so/libclipper2c%{ext_dll}
      dllclipper2c%{ext_dll})
     (copy
+     vendor/Clipper2c/build_so/libClipper2svg%{ext_dll}
+     dllClipper2svg%{ext_dll})
+    (copy
      vendor/Clipper2c/build_so/vendor/Clipper2/CPP/libClipper2%{ext_dll}
      dllClipper2%{ext_dll})))))
 
 (rule
- (targets libclipper2c.a libClipper2.a)
+ (targets libclipper2c.a libClipper2.a libClipper2svg.a)
  (deps
   (source_tree vendor/Clipper2c))
  (action
@@ -65,6 +71,7 @@
        (run cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF ..)
        (run make))))
     (copy vendor/Clipper2c/build_a/libclipper2c.a libclipper2c.a)
+    (copy vendor/Clipper2c/build_a/libClipper2svg.a libClipper2svg.a)
     (copy
      vendor/Clipper2c/build_a/vendor/Clipper2/CPP/libClipper2.a
      libClipper2.a)))))

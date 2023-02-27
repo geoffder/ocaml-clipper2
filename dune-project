@@ -30,6 +30,7 @@
    (>= 4.14.0))
   ctypes
   ctypes-foreign
+  integers
   conf-cmake
   (ppx_inline_test :with-test)
   (OCADml

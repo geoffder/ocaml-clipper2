@@ -1,0 +1,18 @@
+(executables
+ (names minkowski booleans)
+ (libraries clipper OCADml OSCADml gg))
+
+(rule
+ (alias examples)
+ (deps
+  (sandbox always)
+  (:runner "helpers/runner.exe")
+  (:exes
+   (glob_files "*.exe")))
+ (targets
+  (dir "output"))
+ (mode promote)
+ (action
+  (chdir
+   "output"
+   (run %{runner} %{exes}))))
