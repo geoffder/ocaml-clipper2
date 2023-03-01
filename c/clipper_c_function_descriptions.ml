@@ -227,6 +227,12 @@ module Functions (F : Ctypes.FOREIGN) = struct
   let pathd_add_point =
     foreign "clipper_pathd_add_point" (ptr PathD.t @-> PointD.t @-> returning void)
 
+  let path64_reserve =
+    foreign "clipper_path64_reserve" (ptr Path64.t @-> size_t @-> returning void)
+
+  let pathd_reserve =
+    foreign "clipper_pathd_reserve" (ptr PathD.t @-> size_t @-> returning void)
+
   let path64_ellipse =
     foreign
       "clipper_path64_ellipse"
@@ -255,6 +261,12 @@ module Functions (F : Ctypes.FOREIGN) = struct
 
   let pathsd_add_path =
     foreign "clipper_pathsd_add_path" (ptr PathsD.t @-> ptr PathD.t @-> returning void)
+
+  let paths64_reserve =
+    foreign "clipper_paths64_reserve" (ptr Paths64.t @-> size_t @-> returning void)
+
+  let pathsd_reserve =
+    foreign "clipper_pathsd_reserve" (ptr PathsD.t @-> size_t @-> returning void)
 
   (** {1 Path Conversions (to C)} *)
 

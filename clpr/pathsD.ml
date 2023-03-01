@@ -6,6 +6,7 @@ let make () =
   let _ = C.Funcs.pathsd buf in
   t
 
+let reserve t n = C.Funcs.pathsd_reserve t (size_of_int n)
 let add_path t p = C.Funcs.pathsd_add_path t p
 
 let of_tups l =
@@ -13,7 +14,7 @@ let of_tups l =
   List.iter (fun s -> add_path t (PathD.of_tups s)) l;
   t
 
-let of_path p =
+let of_pathd p =
   let t = make () in
   add_path t p;
   t

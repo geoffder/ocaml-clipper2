@@ -118,6 +118,12 @@ module PathD : sig
   (** {1 Construction} *)
 
   val make : unit -> t
+
+  (** [reserve t n]
+
+      Reserves memory for up to [n] points in the path vector [t]. *)
+  val reserve : t -> int -> unit
+
   val of_tups : (float * float) list -> t
   val ellipse : ?fn:int -> ?centre:PointD.t -> float -> float -> t
   val add_point : t -> PointD.t -> unit
@@ -171,9 +177,15 @@ module PathsD : sig
   (** {1 Construction / Conversion} *)
 
   val make : unit -> t
+
+  (** [reserve t n]
+
+      Reserves memory for up to [n] path elements in the paths vector [t]. *)
+  val reserve : t -> int -> unit
+
   val of_tups : (float * float) list list -> t
   val add_path : t -> PathD.t -> unit
-  val of_path : PathD.t -> t
+  val of_pathd : PathD.t -> t
   val to_paths64 : t -> paths64
   val scale_to_paths64 : ?sx:float -> ?sy:float -> t -> (paths64, string) result
 
@@ -425,6 +437,12 @@ module Path64 : sig
   (** {1 Construction} *)
 
   val make : unit -> t
+
+  (** [reserve t n]
+
+      Reserves memory for up to [n] points in the path vector [t]. *)
+  val reserve : t -> int -> unit
+
   val of_tups : (int64 * int64) list -> t
   val ellipse : ?fn:int -> ?centre:Point64.t -> int64 -> int64 -> t
   val add_point : t -> Point64.t -> unit
@@ -478,9 +496,15 @@ module Paths64 : sig
   (** {1 Construction} *)
 
   val make : unit -> t
+
+  (** [reserve t n]
+
+      Reserves memory for up to [n] path elements in the paths vector [t]. *)
+  val reserve : t -> int -> unit
+
   val of_tups : (int64 * int64) list list -> t
   val add_path : t -> Path64.t -> unit
-  val of_path : Path64.t -> t
+  val of_path64 : Path64.t -> t
 
   (** {1 Access} *)
 

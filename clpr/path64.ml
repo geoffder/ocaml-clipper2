@@ -14,6 +14,7 @@ let get t i =
   then C.Funcs.path64_get_point t i
   else invalid_arg "Path64.get: out of bounds access"
 
+let reserve t n = C.Funcs.path64_reserve t (size_of_int n)
 let add_point t p = C.Funcs.path64_add_point t p
 
 let of_tups l =

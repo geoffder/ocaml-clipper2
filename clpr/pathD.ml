@@ -16,6 +16,7 @@ let get t i =
   then C.Funcs.pathd_get_point t i
   else invalid_arg "PathD.get: out of bounds access"
 
+let reserve t n = C.Funcs.pathd_reserve t (size_of_int n)
 let add_point t p = C.Funcs.pathd_add_point t p
 
 let of_tups l =
