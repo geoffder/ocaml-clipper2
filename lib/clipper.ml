@@ -217,7 +217,7 @@ struct
     | [] -> Paths (PathsD.make ())
     | hd :: tl -> boolean_op ?fill_rule ~op:`Xor hd tl
 
-  let bounds : type c l. (c, l) t -> RectD.t = function
+  let bounds : type c l. (c, l) t -> Rect.t = function
     | Path p -> PathD.bounds p
     | Paths ps -> PathsD.bounds ps
 
@@ -632,7 +632,7 @@ struct
     | [] -> Paths (Paths64.make ())
     | hd :: tl -> boolean_op ?fill_rule ~op:`Xor hd tl
 
-  let bounds : type c l. (c, l) t -> Rect64.t = function
+  let bounds : type c l. (c, l) t -> Rect.t = function
     | Path p -> Path64.bounds p
     | Paths ps -> Paths64.bounds ps
 

@@ -1,17 +1,5 @@
 open Conv
 
-(* NOTE:
-If you are working with doubles, rather than int64, it is best to stick with
-the InflatePaths API, as that is precision aware. The path adding methods
-of the ClipperOffset class simply round off the doubles into integers, whereas
-the double version of InflatePaths adheres to the desired precision by scaling
-before and after casting. To bring this more in line, some double specific
-specialization like with ClipperD would be needed (keeping track of
-precision and applying it when adding paths / executing).
-
-Will leave this here as is for now, but to avoid confusion, it will be excluded
-from decimal interfaces. *)
-
 type t = C.Types.Offset.t Ctypes_static.ptr
 
 let size = C.Funcs.offset_size () |> size_to_int
@@ -34,16 +22,6 @@ let make
     C.Funcs.offset buf miter_limit arc_tolerance preserve_collinear reverse_solution
   in
   t
-
-let add_pathd ?(join_type = `Round) ?(end_type = `Polygon) t p =
-  let join_type = JoinType.make join_type
-  and end_type = EndType.make end_type in
-  C.Funcs.offset_add_pathd t p join_type end_type
-
-let add_pathsd ?(join_type = `Round) ?(end_type = `Polygon) t p =
-  let join_type = JoinType.make join_type
-  and end_type = EndType.make end_type in
-  C.Funcs.offset_add_pathsd t p join_type end_type
 
 let add_path64 ?(join_type = `Round) ?(end_type = `Polygon) t p =
   let join_type = JoinType.make join_type

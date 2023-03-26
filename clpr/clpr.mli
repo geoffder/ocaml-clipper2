@@ -648,8 +648,6 @@ module Offset : sig
     -> unit
     -> t
 
-  val add_pathd : ?join_type:join_type -> ?end_type:end_type -> t -> PathD.t -> unit
-  val add_pathsd : ?join_type:join_type -> ?end_type:end_type -> t -> PathsD.t -> unit
   val add_path64 : ?join_type:join_type -> ?end_type:end_type -> t -> Path64.t -> unit
   val add_paths64 : ?join_type:join_type -> ?end_type:end_type -> t -> Paths64.t -> unit
   val execute : delta:float -> t -> Paths64.t
