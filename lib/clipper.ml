@@ -259,10 +259,10 @@ struct
     | Path p -> Path (PathD.strip_near_equal ?closed ~eps p)
     | Paths ps -> Paths (PathsD.strip_near_equal ?closed ~eps ps)
 
-  let strip_duplicates (type c l) ?closed (t : (c, l) t) : (c, l) t =
+  let strip_duplicates (type c l) ?closed (t : (c, l) t) : unit =
     match t with
-    | Path p -> Path (PathD.strip_duplicates ?closed p)
-    | Paths ps -> Paths (PathsD.strip_duplicates ?closed ps)
+    | Path p -> PathD.strip_duplicates ?closed p
+    | Paths ps -> PathsD.strip_duplicates ?closed ps
 
   let simplify (type c l) ?closed ?(eps = eps) (t : (c, l) t) : (c, l) t =
     match t with
@@ -674,10 +674,10 @@ struct
     | Path p -> Path (Path64.strip_near_equal ?closed ~eps p)
     | Paths ps -> Paths (Paths64.strip_near_equal ?closed ~eps ps)
 
-  let strip_duplicates (type c l) ?closed (t : (c, l) t) : (c, l) t =
+  let strip_duplicates (type c l) ?closed (t : (c, l) t) : unit =
     match t with
-    | Path p -> Path (Path64.strip_duplicates ?closed p)
-    | Paths ps -> Paths (Paths64.strip_duplicates ?closed ps)
+    | Path p -> Path64.strip_duplicates ?closed p
+    | Paths ps -> Paths64.strip_duplicates ?closed ps
 
   let simplify (type c l) ?closed ?(eps = eps) (t : (c, l) t) : (c, l) t =
     match t with

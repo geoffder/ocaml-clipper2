@@ -122,10 +122,7 @@ let strip_near_equal ?(closed = true) ?(eps = 0.01) t =
   let _ = C.Funcs.pathsd_strip_near_equal buf t eps closed in
   stripped
 
-let strip_duplicates ?(closed = true) t =
-  let buf, stripped = alloc () in
-  let _ = C.Funcs.pathsd_strip_duplicates buf t closed in
-  stripped
+let strip_duplicates ?(closed = true) t = C.Funcs.pathsd_strip_duplicates t closed
 
 let simplify ?(closed = true) ?(eps = 0.01) t =
   let buf, simplified = alloc () in

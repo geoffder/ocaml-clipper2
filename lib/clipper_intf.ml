@@ -487,8 +487,8 @@ module type S = sig
   (** [strip_duplicates ?closed ?eps t]
 
        Remove adjacent points that duplicate of their neighbours from the
-       paths [t]. The path is treated as [closed] by default. *)
-  val strip_duplicates : ?closed:bool -> ('cpp, 'ctr) t -> ('cpp, 'ctr) t
+       paths [t] (inplace). The path is treated as [closed] by default. *)
+  val strip_duplicates : ?closed:bool -> ('cpp, 'ctr) t -> unit
 
   (** {1 Transformation} *)
 

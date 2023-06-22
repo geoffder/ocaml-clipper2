@@ -146,7 +146,7 @@ module PathD : sig
 
   val trim_collinear : ?precision:int -> ?closed:bool -> t -> t
   val strip_near_equal : ?closed:bool -> ?eps:float -> t -> t
-  val strip_duplicates : ?closed:bool -> t -> t
+  val strip_duplicates : ?closed:bool -> t -> unit
   val simplify : ?closed:bool -> ?eps:float -> t -> t
   val ramer_douglas_peucker : ?eps:float -> t -> t
 
@@ -235,7 +235,7 @@ module PathsD : sig
   (** {1 Simplification} *)
 
   val strip_near_equal : ?closed:bool -> ?eps:float -> t -> t
-  val strip_duplicates : ?closed:bool -> t -> t
+  val strip_duplicates : ?closed:bool -> t -> unit
   val simplify : ?closed:bool -> ?eps:float -> t -> t
   val ramer_douglas_peucker : ?eps:float -> t -> t
 
@@ -466,7 +466,7 @@ module Path64 : sig
 
   val trim_collinear : ?closed:bool -> t -> t
   val strip_near_equal : ?closed:bool -> ?eps:float -> t -> t
-  val strip_duplicates : ?closed:bool -> t -> t
+  val strip_duplicates : ?closed:bool -> t -> unit
   val simplify : ?closed:bool -> ?eps:float -> t -> t
   val ramer_douglas_peucker : ?eps:float -> t -> t
 
@@ -543,7 +543,7 @@ module Paths64 : sig
   (** {1 Simplification} *)
 
   val strip_near_equal : ?closed:bool -> ?eps:float -> t -> t
-  val strip_duplicates : ?closed:bool -> t -> t
+  val strip_duplicates : ?closed:bool -> t -> unit
   val simplify : ?closed:bool -> ?eps:float -> t -> t
   val ramer_douglas_peucker : ?eps:float -> t -> t
 

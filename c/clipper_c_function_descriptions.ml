@@ -453,24 +453,16 @@ module Functions (F : Ctypes.FOREIGN) = struct
       (ptr void @-> ptr Paths64.t @-> double @-> bool @-> returning (ptr Paths64.t))
 
   let pathd_strip_duplicates =
-    foreign
-      "clipper_pathd_strip_duplicates"
-      (ptr void @-> ptr PathD.t @-> bool @-> returning (ptr PathD.t))
+    foreign "clipper_pathd_strip_duplicates" (ptr PathD.t @-> bool @-> returning void)
 
   let path64_strip_duplicates =
-    foreign
-      "clipper_path64_strip_duplicates"
-      (ptr void @-> ptr Path64.t @-> bool @-> returning (ptr Path64.t))
+    foreign "clipper_path64_strip_duplicates" (ptr Path64.t @-> bool @-> returning void)
 
   let pathsd_strip_duplicates =
-    foreign
-      "clipper_pathsd_strip_duplicates"
-      (ptr void @-> ptr PathsD.t @-> bool @-> returning (ptr PathsD.t))
+    foreign "clipper_pathsd_strip_duplicates" (ptr PathsD.t @-> bool @-> returning void)
 
   let paths64_strip_duplicates =
-    foreign
-      "clipper_paths64_strip_duplicates"
-      (ptr void @-> ptr Paths64.t @-> bool @-> returning (ptr Paths64.t))
+    foreign "clipper_paths64_strip_duplicates" (ptr Paths64.t @-> bool @-> returning void)
 
   let path64_simplify =
     foreign

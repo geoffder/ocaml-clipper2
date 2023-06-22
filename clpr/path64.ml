@@ -62,10 +62,7 @@ let strip_near_equal ?(closed = true) ?(eps = 1.) t =
   let _ = C.Funcs.path64_strip_near_equal buf t eps closed in
   stripped
 
-let strip_duplicates ?(closed = true) t =
-  let buf, stripped = alloc () in
-  let _ = C.Funcs.path64_strip_duplicates buf t closed in
-  stripped
+let strip_duplicates ?(closed = true) t = C.Funcs.path64_strip_duplicates t closed
 
 let simplify ?(closed = true) ?(eps = 1.) t =
   let buf, simplified = alloc () in
