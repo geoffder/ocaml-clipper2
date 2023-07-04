@@ -9,8 +9,8 @@ let of_pts a b =
   let buf, t = alloc ()
   and left = Int64.min (Point64.x a) (Point64.x b)
   and right = Int64.max (Point64.x a) (Point64.x b)
-  and bottom = Int64.min (Point64.y a) (Point64.y b)
-  and top = Int64.max (Point64.y a) (Point64.y b) in
+  and bottom = Int64.max (Point64.y a) (Point64.y b)
+  and top = Int64.min (Point64.y a) (Point64.y b) in
   let _ = C.Funcs.rect64 buf left top right bottom in
   t
 

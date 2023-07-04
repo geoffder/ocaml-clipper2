@@ -11,8 +11,8 @@ let of_pts a b =
   let buf, t = alloc ()
   and left = Float.min (PointD.x a) (PointD.x b)
   and right = Float.max (PointD.x a) (PointD.x b)
-  and bottom = Float.min (PointD.y a) (PointD.y b)
-  and top = Float.max (PointD.y a) (PointD.y b) in
+  and bottom = Float.max (PointD.y a) (PointD.y b)
+  and top = Float.min (PointD.y a) (PointD.y b) in
   let _ = C.Funcs.rectd buf left top right bottom in
   t
 
